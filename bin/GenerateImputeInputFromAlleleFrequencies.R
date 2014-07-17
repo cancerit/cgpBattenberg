@@ -86,8 +86,8 @@ print(paste("ncol knownsnps=",ncol(known_SNPs),sep=""))
 print(paste("nrow found_snp_data=",nrow(found_snp_data),sep=""))
 print(paste("ncol found_snp_data=",ncol(found_snp_data),sep=""))
 
-ref_indices=match(known_SNPs[!is.na(indices),3],nucleotides)+10
-alt_indices=match(known_SNPs[!is.na(indices),4],nucleotides)+10
+ref_indices=match(known_SNPs[!is.na(indices),3],nucleotides)+ncol(normal_snp_data)+2
+alt_indices=match(known_SNPs[!is.na(indices),4],nucleotides)+ncol(normal_snp_data)+2
 
 BAFs<-as.numeric(found_snp_data[cbind(1:nrow(found_snp_data),alt_indices)])/(as.numeric(found_snp_data[cbind(1:nrow(found_snp_data),alt_indices)])+as.numeric(found_snp_data[cbind(1:nrow(found_snp_data),ref_indices)]))
 
