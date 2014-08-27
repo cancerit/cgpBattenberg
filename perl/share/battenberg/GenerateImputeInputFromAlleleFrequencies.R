@@ -1,23 +1,24 @@
 args=commandArgs(TRUE)
-impute_input_file<-toString(args[1])
-is.male<-as.logical(args[2])
-SNP_file<-toString(args[3])
-Normal_SNP_file<-toString(args[4])
-outFileStart<-toString(args[5])
-chr<-as.numeric(args[6])
-problemLociFile = "probloci.txt"
+lib_path<-toString(args[1])
+impute_input_file<-toString(args[2])
+is.male<-as.logical(args[3])
+SNP_file<-toString(args[4])
+Normal_SNP_file<-toString(args[5])
+outFileStart<-toString(args[6])
+chr<-as.numeric(args[7])
+problemLociFile<-toString(args[8])
 useLociFile = NA
 heterozygousFilter=0.1
-if(length(args)>=7){
-	problemLociFile = toString(args[7])
-	if(length(args)>=8){
-		useLociFile = toString(args[8])
-		if(length(args)>=9){
-			heterozygousFilter=as.numeric(args[9])		
+if(length(args)>=9){
+	problemLociFile = toString(args[9])
+	if(length(args)>=10){
+		useLociFile = toString(args[10])
+		if(length(args)>=11){
+			heterozygousFilter=as.numeric(args[11])
 		}
 	}
 }
-	
+
 #260213 - read allele frequency file for just one chromosome - requires less memory
 SNP_file = gsub(".txt",paste("_chr",chr,".txt",sep=""),SNP_file)
 Normal_SNP_file = gsub(".txt",paste("_chr",chr,".txt",sep=""),Normal_SNP_file)
@@ -54,7 +55,7 @@ if((problemLociFile !="NA") & (!is.na(problemLociFile)))
 if((useLociFile !="NA") & (!is.na(useLociFile)))
 {
 	goodSNPs=read.table(useLociFile,header=T,sep="\t",row.names=NULL)
-	goodSNPs=goodSNPs$pos[goodSNPs$chr==chr_names[chr]]	
+	goodSNPs=goodSNPs$pos[goodSNPs$chr==chr_names[chr]]
 	len=length(goodSNPs)
 	goodIndices=match(known_SNPs[,2],goodSNPs)
 	known_SNPs = known_SNPs[!is.na(goodIndices),]
@@ -76,7 +77,7 @@ genotypes = array(0,c(sum(!is.na(indices)),3))
 
 genotypes[refLoci,1]=1
 genotypes[hetLoci,2]=1
-genotypes[altLoci,3]=1		
+genotypes[altLoci,3]=1
 
 minBaf=min(heterozygousFilter,1.0-heterozygousFilter)
 maxBaf=max(heterozygousFilter,1.0-heterozygousFilter)
@@ -93,7 +94,7 @@ BAFs<-as.numeric(found_snp_data[cbind(1:nrow(found_snp_data),alt_indices)])/(as.
 
 genotypes[BAFs<=minBaf,1]=1
 genotypes[BAFs>minBaf & BAFs<maxBaf,2]=1
-genotypes[BAFs>=maxBaf,3]=1		
+genotypes[BAFs>=maxBaf,3]=1
 snp.names=paste("snp",1:sum(!is.na(indices)),sep="")
 out.data<-cbind(snp.names,known_SNPs[!is.na(indices),1:4],genotypes)
 

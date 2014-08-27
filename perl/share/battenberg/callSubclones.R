@@ -1,15 +1,16 @@
-source("orderEdges.R")
-
 args=commandArgs(TRUE)
-impute_input_file<-toString(args[1])
-is.male<-as.logical(args[2])
+lib_path<-toString(args[1])
+impute_input_file<-toString(args[2])
+is.male<-as.logical(args[3])
 impute.info = read.table(impute_input_file,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
 if(is.male){
 	impute.info = impute.info[impute.info[,7]==1,]
 }
 chr_names=unique(impute.info[,1])
 
-start.file = toString(args[3])
+source(paste(lib_path,"orderEdges.R",sep="/"))
+
+start.file = toString(args[4])
 rho_psi_info = read.table(paste(start.file,"_rho_and_psi.txt",sep=""),header=T,sep="\t",stringsAsFactors=F)
 
 #rho = rho_psi_info$rho[which(rho_psi_info$is.best)] # rho = tumour percentage (called tp in previous versions)
@@ -25,11 +26,11 @@ gamma=1
 
 #segmentation.gamma is the gamma used in PCF
 segmentation.gamma=NA
-if(length(args)>=4){
-	segmentation.gamma = as.integer(args[4])
+if(length(args)>=5){
+	segmentation.gamma = as.integer(args[5])
 	print(paste("segmentation.gamma=",segmentation.gamma,sep=""))
-	if(length(args)>=5){
-		gamma = as.numeric(args[5])
+	if(length(args)>=6){
+		gamma = as.numeric(args[6])
 		print(paste("platform gamma=",gamma,sep=""))
 	}
 }
@@ -78,13 +79,13 @@ subcloneres = NULL
 
 for (i in 1:length(BAFlevels)) {
   l = BAFlevels[i]
-  
+
   #280814 - make sure that BAF>=0.5, otherwise nMajor and nMinor may be the wrong way around
   l=max(l,1-l)
-  
+
   #DCW 240314
   BAFke = BAFphased[(switchpoints[i]+1):switchpoints[i+1]]
-  
+
   startpos = min(BAFpos[names(BAFke)])
   endpos = max(BAFpos[names(BAFke)])
   chrom = names(ctrans[floor(startpos/1000000000)])
@@ -95,7 +96,7 @@ for (i in 1:length(BAFlevels)) {
   }
   nMajor = (rho-1+l*psi*2^(LogR/gamma))/rho
   nMinor = (rho-1+(1-l)*psi*2^(LogR/gamma))/rho
-	
+
   # to make sure we're always in a positive square:
   #if(nMajor < 0) {
   #  nMajor = 0.01
@@ -111,9 +112,9 @@ for (i in 1:length(BAFlevels)) {
 		}else{
 			nMajor = nMajor + l * (0.01 - nMinor) / (1-l)
 		}
-		nMinor = 0.01		
+		nMinor = 0.01
 	}
-   
+
   # note that these are sorted in the order of ascending BAF:
   nMaj = c(floor(nMajor),ceiling(nMajor),floor(nMajor),ceiling(nMajor))
   nMin = c(ceiling(nMinor),ceiling(nMinor),floor(nMinor),floor(nMinor))
@@ -126,12 +127,12 @@ for (i in 1:length(BAFlevels)) {
   levels = (1-rho+rho*nMaj)/(2-2*rho+rho*(nMaj+nMin))
   #problem if rho=1 and nMaj=0 and nMin=0
   levels[nMaj==0 & nMin==0] = 0.5
-  
+
   #whichclosestlevel = which.min(abs(levels-l))
-  ## if 0.5 and there are multiple options, finetune, because a random option got chosen 
+  ## if 0.5 and there are multiple options, finetune, because a random option got chosen
   #if (levels[whichclosestlevel]==0.5 && levels[2]==0.5 && levels[3]==0.5) {
   #  whichclosestlevel = ifelse(ntot>x+y+1,2,3)
-  #}  
+  #}
 
   #DCW - just test corners on the nearest edge to determine clonality
   #If the segment is called as subclonal, this is the edge that will be used to determine the subclonal proportions that are reported first
@@ -140,7 +141,7 @@ for (i in 1:length(BAFlevels)) {
   nMin.test = all.edges[1,c(2,4)]
   test.levels = (1-rho+rho*nMaj.test)/(2-2*rho+rho*(nMaj.test+nMin.test))
   whichclosestlevel.test = which.min(abs(test.levels-l))
-  
+
   #270713 - problem caused by segments with constant BAF (usually 1 or 2)
   if(sd(BAFke)==0){
 	  pval[i]=0
@@ -150,7 +151,7 @@ for (i in 1:length(BAFlevels)) {
   }
   #if(min(abs(l-levels))<maxdist) {
   #if(min(abs(l-test.levels))<maxdist) {
-  if(abs(l-test.levels[whichclosestlevel.test])<maxdist) {  
+  if(abs(l-test.levels[whichclosestlevel.test])<maxdist) {
     pval[i]=1
   }
 
@@ -171,7 +172,7 @@ for (i in 1:length(BAFlevels)) {
 	nMin1 = all.edges[,2]
 	nMaj2 = all.edges[,3]
 	nMin2 = all.edges[,4]
-	
+
     tau = (1 - rho + rho * nMaj2 - 2 * l * (1 - rho) - l * rho * (nMin2 + nMaj2)) / (l * rho * (nMin1 + nMaj1) - l * rho * (nMin2 + nMaj2) - rho * nMaj1 + rho * nMaj2)
     sdl = sd(BAFke,na.rm=T)/sqrt(sum(!is.na(BAFke)))
     sdtau = abs((1 - rho + rho * nMaj2 - 2 * (l+sdl) * (1 - rho) - (l+sdl) * rho * (nMin2 + nMaj2)) / ((l+sdl) * rho * (nMin1 + nMaj1) - (l+sdl) * rho * (nMin2 + nMaj2) - rho * nMaj1 + rho * nMaj2) - tau) / 2 +
@@ -209,7 +210,7 @@ for (i in 1:length(BAFlevels)) {
       nMaj1[5],nMin1[5],tau[5],nMaj2[5],nMin2[5],1-tau[5],sdtau[5],sdtaubootstrap[5],tau25[5],tau975[5],
       nMaj1[6],nMin1[6],tau[6],nMaj2[6],nMin2[6],1-tau[6],sdtau[6],sdtaubootstrap[6],tau25[6],tau975[6]))
   }else {
-    #if called as clonal, use the best corner from the nearest edge 
+    #if called as clonal, use the best corner from the nearest edge
 	subcloneres = rbind(subcloneres,c(chrom,startpos-floor(startpos/1000000000)*1000000000,
 	endpos-floor(endpos/1000000000)*1000000000,l,pval[i],LogR,ntot,
 	nMaj.test[whichclosestlevel.test],nMin.test[whichclosestlevel.test],1,rep(NA,57)))
@@ -244,10 +245,10 @@ for (chr in chr_names) {
 
   png(filename = paste(start.file,"_subclones_chr",chr,".png",sep=""), width = 2000, height = 2000, res = 200)
   par(mar = c(2.5,2.5,2.5,0.25), cex = 0.4, cex.main=1.5, cex.axis = 1, cex.lab = 1, mfrow = c(2,1))
-  plot(c(min(pos)/1000000,max(pos)/1000000),c(-1,1),pch=".",type = "n", 
+  plot(c(min(pos)/1000000,max(pos)/1000000),c(-1,1),pch=".",type = "n",
        main = paste(sample.name,", chromosome ", chr, sep=""), xlab = "Position (Mb)", ylab = "LogR")
   points(LogRposke/1000000,LogRchr,pch=".",col="grey")
-  plot(c(min(pos)/1000000,max(pos)/1000000),c(0,1),pch=".",type = "n", 
+  plot(c(min(pos)/1000000,max(pos)/1000000),c(0,1),pch=".",type = "n",
        main = paste(sample.name,", chromosome ", chr, sep=""), xlab = "Position (Mb)", ylab = "BAF (phased)")
   points(pos/1000000,BAFchr,pch=".",col="grey")
   points(pos/1000000,BAFsegchr,pch=19,cex=0.5,col=ifelse(BAFpvalschr>siglevel,"darkgreen","red"))

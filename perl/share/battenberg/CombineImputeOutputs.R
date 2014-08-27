@@ -1,8 +1,9 @@
-args=(commandArgs(TRUE)) 
-impute_input_file<-toString(args[1])
-is.male<-as.logical(args[2])
-inputStart<-toString(args[3])
-chr<-as.numeric(args[4])
+args=(commandArgs(TRUE))
+lib_path<-toString(args[1])
+impute_input_file<-toString(args[2])
+is.male<-as.logical(args[3])
+inputStart<-toString(args[4])
+chr<-as.numeric(args[5])
 
 impute.info = read.table(impute_input_file,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
 if(is.male){
@@ -19,7 +20,6 @@ for(r in 1:nrow(impute.info)){
 	}
 	all.boundaries = rbind(all.boundaries,cbind(boundaries[-(length(boundaries))],boundaries[-1]))
 }
-
-source("concatenateFiles.R")
+source(paste(lib_path,"concatenateFiles.R",sep="/"))
 concatenateImputeFiles(paste(inputStart,chr,sep=""),paste(inputStart,chr,"_allHaplotypeInfo.txt",sep=""),all.boundaries)
 q(save="no")

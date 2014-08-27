@@ -1,8 +1,9 @@
 args=(commandArgs(TRUE))
-imputeInfoFile<-toString(args[1])
-chr<-as.numeric(args[2])
-mutFile<-toString(args[3])
-samplename<-toString(args[4])
+lib_path<-toString(args[1])
+imputeInfoFile<-toString(args[2])
+chr<-as.numeric(args[3])
+mutFile<-toString(args[4])
+samplename<-toString(args[5])
 
 impute.info = read.table(imputeInfoFile,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
 chr_names=unique(impute.info[,1])

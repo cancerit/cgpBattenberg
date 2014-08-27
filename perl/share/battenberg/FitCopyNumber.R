@@ -1,26 +1,26 @@
 args = ( commandArgs(TRUE) )
-
-samplename<-toString(args[1])
-start.file<-toString(args[2])
-dist_choice <- as.integer(args[3])
-ascat_dist_choice <- as.integer(args[4])
+lib_path<-toString(args[1])
+samplename<-toString(args[2])
+start.file<-toString(args[3])
+dist_choice <- as.integer(args[4])
+ascat_dist_choice <- as.integer(args[5])
 uninformative_BAF_threshold = 0.51
 gamma_param=1
 use_preset_rho_psi=F
-if( length( args ) >= 5 )
+if( length( args ) >= 6)
 {
-	uninformative_BAF_threshold <- as.numeric(args[5] )
-	if( length( args ) >= 6 )
+	uninformative_BAF_threshold <- as.numeric(args[6] )
+	if( length( args ) >= 7 )
 	{
-		gamma_param=as.numeric(args[6])
-		if( length( args ) >= 7 ){
-			min.ploidy = as.numeric(args[7])
-			max.ploidy = as.numeric(args[8])
-			min.rho = as.numeric(args[9])
-			min.goodness.of.fit = as.numeric(args[10])
-			if( length( args ) >= 11 ){
-				preset_rho = as.numeric(args[11])
-				preset_psi = as.numeric(args[12])
+		gamma_param=as.numeric(args[7])
+		if( length( args ) >= 8 ){
+			min.ploidy = as.numeric(args[8])
+			max.ploidy = as.numeric(args[9])
+			min.rho = as.numeric(args[10])
+			min.goodness.of.fit = as.numeric(args[11])
+			if( length( args ) >= 12 ){
+				preset_rho = as.numeric(args[12])
+				preset_psi = as.numeric(args[13])
 				use_preset_rho_psi=T
 			}
 		}
@@ -29,7 +29,7 @@ if( length( args ) >= 5 )
 
 read_depth=30
 
-source("ascat.R")
+source(paste(lib_path,"ascat.R",sep="/"))
 
 segmented.BAF.data = read.table(paste(samplename,".BAFsegmented.txt",sep=""),sep="\t",header=F,stringsAsFactors=F,skip=1,row.names=1)
 raw.BAF.data = read.table(paste(start.file,"mutantBAF.tab",sep=""),sep="\t",header=T,stringsAsFactors=F)
@@ -46,7 +46,7 @@ if(length(grep("chr",raw.BAF.data[1,1]))>0){
 if(length(grep("chr",raw.logR.data[1,1]))>0){
 	raw.logR.data[,1] = gsub("chr","",raw.logR.data[,1])
 }
-	
+
 BAF.data = NULL
 logR.data = NULL
 segmented.logR.data = NULL
@@ -58,11 +58,11 @@ for(chr in chr.names){
 	chr.segmented.BAF.data = segmented.BAF.data[segmented.BAF.data[,1]==chr,]
 	print(chr.segmented.BAF.data[1:3,])
 	indices = match(chr.segmented.BAF.data[,2],chr.BAF.data$Position )
-	
+
 	#130313
 	chr.segmented.BAF.data = chr.segmented.BAF.data[!is.na(indices),]
 	matched.segmented.BAF.data = rbind(matched.segmented.BAF.data, chr.segmented.BAF.data)
-	
+
 	BAF.data = rbind(BAF.data, chr.BAF.data[indices[!is.na(indices)],])
 	chr.logR.data = raw.logR.data[raw.logR.data$Chromosome==chr,]
 	indices = match(chr.segmented.BAF.data[,2],chr.logR.data$Position)

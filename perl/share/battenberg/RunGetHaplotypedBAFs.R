@@ -1,18 +1,20 @@
 args=(commandArgs(TRUE))
-impute_info_file<-toString(args[1])
-is.male<-as.logical(args[2])
-SNP_file<-toString(args[3])
-Normal_SNP_file<-toString(args[4])
-hapFileStart<-toString(args[5])
-samplename<-toString(args[6])
-BAFfileStart<-toString(args[7])
-chr<-toString(args[8])
+
+lib_path<-toString(args[1])
+impute_info_file<-toString(args[2])
+is.male<-as.logical(args[3])
+SNP_file<-toString(args[4])
+Normal_SNP_file<-toString(args[5])
+hapFileStart<-toString(args[6])
+samplename<-toString(args[7])
+BAFfileStart<-toString(args[8])
+chr<-toString(args[9])
 minCount = 10
-if(length(args)>=9){
-	minCount<-as.integer(args[7])
+if(length(args)>=10){
+	minCount<-as.integer(args[10])
 }
 
-source("GetHaplotypedBAFs.R")
+source(paste(lib_path,"GetHaplotypedBAFs.R",sep="/"))
 
 impute.info = read.table(impute_info_file,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
 if(is.male){
