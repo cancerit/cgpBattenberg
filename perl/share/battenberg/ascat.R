@@ -237,7 +237,7 @@ calc_Pvalue_t_twotailed <-function( sample_size, sample_mean, sample_SD, mu_pop,
 	pval = 2 * lower_tail_prob
 
 	#DCW 250314
-	if((sample_mean - mu_pop)<max_dist){
+	if(abs(sample_mean - mu_pop)<max_dist){
 		pval = 1
 	}
 
