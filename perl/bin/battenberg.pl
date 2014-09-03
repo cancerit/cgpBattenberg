@@ -89,7 +89,7 @@ my %index_max = ( 'allelecount' => -1,
 	Sanger::CGP::Battenberg::Implement::battenberg_callsubclones($options) if(!exists $options->{'process'} || $options->{'process'} eq 'subclones');
 
 	if(!exists $options->{'process'} || $options->{'process'} eq 'finalise'){
-		#Sanger::CGP::Battenberg::Implement::battenberg_finalise($options);
+		Sanger::CGP::Battenberg::Implement::battenberg_finalise($options);
 		#cleanup($options);
 	}
 }
