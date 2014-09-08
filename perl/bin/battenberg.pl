@@ -90,7 +90,7 @@ my %index_max = ( 'allelecount' => -1,
 
 	if(!exists $options->{'process'} || $options->{'process'} eq 'finalise'){
 		Sanger::CGP::Battenberg::Implement::battenberg_finalise($options);
-		#cleanup($options);
+		Sanger::CGP::Battenberg::Implement::battenberg_cleanup($options);
 	}
 }
 
@@ -125,6 +125,10 @@ sub setup {
 					'xp|max-ploidy=f' => \$opts{'max_ploidy'},
 					'mr|min-rho=f' => \$opts{'min_rho'},
 					'mg|min-goodness-of-fit=f' => \$opts{'min_goodness'},
+					'rs|species=s' => \$opts{'species'},
+          'ra|assembly=s' => \$opts{'assembly'},
+          'pr|protocol=s' => \$opts{'protocol'},
+          'pl|platform=s' => \$opts{'platform'},
 		) or pod2usage(2);
 
 	pod2usage(-message => PCAP::license, -verbose => 2) if(defined $opts{'h'});
@@ -222,9 +226,6 @@ sub setup {
 
 	return \%opts;
 }
-
-
-
 
 
 __END__
