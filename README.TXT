@@ -19,9 +19,3 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
 
-CleanUp<-function(chr,startOutput,startInput){
-	cmd = paste("rm ",startOutput,chr,"_*_*.*",sep="")
-	system(cmd)
-	cmd = paste("rm ",startInput,chr,".txt",sep="")
-	system(cmd)
-}
