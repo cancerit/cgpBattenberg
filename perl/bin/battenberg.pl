@@ -18,6 +18,8 @@ const my @VALID_PROCESS => qw( allelecount baflog imputefromaf
 															cleanuppostbaf plothaplotypes combinebafs
 															segmentphased fitcn subclones finalise );
 
+const my @VALID_PROTOCOLS => qw( WGS WGX RNA );
+
 const my $DEFAULT_ALLELE_COUNT_MBQ => 20;
 const my $DEFAULT_PLATFORM_GAMMA=>1;
 const my $DEFAULT_PHASING_GAMMA=>1;
@@ -29,6 +31,10 @@ const my $DEFAULT_MAX_PLOIDY=>4.8;
 const my $DEFAULT_MIN_RHO=>0.1;
 const my $DEFAULT_MIN_GOODNESS_OF_FIT=>0.63;
 const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
+const my $DEFAULT_SPECIES => 'Human';
+const my $DEFAULT_SPP_ASSEMBLY => '37';
+const my $DEFAULT_PROTOCOL => 'WGS';
+const my $DEFAULT_PLATFORM => 'HiSeq';
 
 my %index_max = ( 'allelecount' => -1,
 									'baflog' => 1,
@@ -160,6 +166,17 @@ sub setup {
   delete $opts{'index'} unless(defined $opts{'index'});
   delete $opts{'limit'} unless(defined $opts{'limit'});
 
+	my $bad_prot = 1;
+  if(exists $opts{'protocol'}) {
+		for my $test_pr(@VALID_PROTOCOLS){
+			if($test_pr eq $opts{'protocol'}){
+				$bad_prot = 0;
+			}
+		}
+  }
+
+  pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
+
 	if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
     if(exists $opts{'index'}) {
@@ -224,6 +241,11 @@ sub setup {
 	$opts{'min_rho'} = $DEFAULT_MIN_RHO if(!exists($opts{'min_rho'}) || !defined($opts{'min_rho'}));
 	$opts{'min_goodness'} = $DEFAULT_MIN_GOODNESS_OF_FIT if(!exists($opts{'min_goodness'}) || !defined($opts{'min_goodness'}));
 
+	$opts{'species'} = $DEFAULT_SPECIES if(!exists($opts{'species'}) || !defined($opts{'species'}));
+	$opts{'assembly'} = $DEFAULT_SPP_ASSEMBLY if(!exists($opts{'assembly'}) || !defined($opts{'assembly'}));
+	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
+	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
+
 	return \%opts;
 }
 
@@ -232,7 +254,7 @@ __END__
 
 =head1 NAME
 
-battenberg.pl - Analyse aligned bam files for battenberg subclones and CN variations.
+battenberg.pl - Analyse aligned bam files via the battenberg algorithm to detect subclones and copynumber variations.
 
 =head1 SYNOPSIS
 
@@ -244,21 +266,27 @@ battenberg.pl [options]
     -tumour-bam            -tb  Path to tumour bam file
     -normal-bam            -nb  Path to normal bam file
     -is-male               -s   Flag, if the sample is male
-    -impute-info           -e   location of the impute info file
-    -thousand-genomes-loc  -u   location of the directory containing 1k genomes data
+    -impute-info           -e   Location of the impute info file
+    -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
+    -prob-loci             -c   Location of prob_loci.txt file
+    -ignore-contigs-file   -ig  File containing contigs to ignore
 
    Optional parameters:
-    -min-bq-allcount       -q   Minimum base quality to permit allele counting
-    -segmentation-gamma    -sg  Segmentation gamma
-    -phasing-gamma         -pg  Phasing gamma
-    -clonality-distance    -cd  Clonality distance
-    -ascat-distance        -ad  ASCAT distance
-    -balanced-threshold    -bt  Balanced threshold
-    -platform-gamma        -lg  Platform gamma
-    -min-ploidy            -mp  Min ploidy
-    -max-ploidy            -xp  Max ploidy
-    -min-rho               -mr  Min Rho
-    -min-goodness-of-fit   -mg  Min goodness of fit
+    -min-bq-allcount       -q   Minimum base quality to permit allele counting [20]
+    -segmentation-gamma    -sg  Segmentation gamma [10]
+    -phasing-gamma         -pg  Phasing gamma [1]
+    -clonality-distance    -cd  Clonality distance [0]
+    -ascat-distance        -ad  ASCAT distance [1]
+    -balanced-threshold    -bt  Balanced threshold [0.51]
+    -platform-gamma        -lg  Platform gamma [1]
+    -min-ploidy            -mp  Min ploidy [1.6]
+    -max-ploidy            -xp  Max ploidy [4.8]
+    -min-rho               -mr  Min Rho [0.1]
+    -min-goodness-of-fit   -mg  Min goodness of fit [0.63]
+    -species               -rs  Reference species [Human]
+    -assembly              -ra  Reference assembly [37]
+    -protocol              -pr  Sequencing protocol [WGS]
+    -platform              -pl  Sequencing platfrom [HiSeq]
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)
@@ -282,13 +310,147 @@ battenberg.pl [options]
 Directory to write output to.  During processing a temp folder will be generated in this area,
 should the process fail B<only delete this if> you are unable to resume the process.
 
-Final output files are: muts.vcf.gz, snps.vcf.gz, no_analysis.bed.gz no_analysis.bed.gz.tbi
+Final output files are:
+
+<tumour_sample>_copynumberprofile.png
+<tumour_sample>_hetdata.tar.gz
+<tumour_sample>_rafseg.tar.gz
+<tumour_sample>_second_nonroundedprofile.png
+<normal_sample>_allelecounts.tar.gz
+<tumour_sample>_allelecounts.tar.gz
+<tumour_sample>_distance.png
+<tumour_sample>_impute_input.tar.gz
+<tumour_sample>_nonroundedprofile.png
+<tumour_sample>_rho_and_psi.txt
+<tumour_sample>_subclones.tar.gz
+<tumour_sample>_battenberg_cn.vcf.gz
+<tumour_sample>_battenberg_cn.vcf.gz.tbi
+<tumour_sample>_Germline<tumour_sample>.png
+<tumour_sample>_impute_output.tar.gz
+<tumour_sample>_normal_contamination.txt
+<tumour_sample>_second_copynumberprofile.png
+<tumour_sample>_subclones.txt
+<tumour_sample>_hetbaf.tar.gz
+<tumour_sample>_logR_Baf_segmented.vcf.gz
+<tumour_sample>_logR_Baf_segmented.vcf.gz.tbi
+<tumour_sample>_other.tar.gz
+<tumour_sample>_second_distance.png
+<tumour_sample>_Tumor<tumour_sample>.png
+
+=item B<-reference>
+
+Path to genome.fa.fai file and the assumed location of its associated .fa file.
+
+=item B<-tumour-bam>
+
+Path to mapped, indexed, duplicate marked/removed tumour bam file.
+
+=item B<-normal-bam>
+
+Path to mapped, indexed, duplicate marked/removed normal bam file.
+
+=item B<-ignore-contigs-file>
+
+Path to ignore file containing a list of contigs to ignore
+
+=item B<-is-male>
+
+Flag the sample as male, otherwise female is assumed
+
+=item B<-impute-info>
+
+Path to the impute_info.txt file to be used by impute
+
+=item B<-thousand-genomes-loc>
+
+Directory containing the 1000genomes loci data
+
+=item B<-prob-loci>
+
+Location of the prob_loci.txt file
+
+=item B< -min-bq-allcount>
+
+Minimum base quality of alleles to be counted in allele counting step
+
+=item B<-segmentation-gamma>
+
+Optional battenberg input Segmentation gamma
+
+=item B<-phasing-gamma>
+
+Optional battenberg input Phasing gamma
+
+=item B<-clonality-distance>
+
+Optional battenberg input Clonality distance
+
+=item B<-ascat-distance>
+
+Optional battenberg input ASCAT distance
+
+=item B<-balanced-threshold>
+
+Optional battenberg input Balanced threshold
+
+=item B<-platform-gamma>
+
+Optional battenberg input Platform gamma
+
+=item B<-min-ploidy>
+
+Optional battenberg input Min ploidy
+
+=item B<-max-ploidy>
+
+Optional battenberg input Max ploidy
+
+=item B<-min-rho>
+
+Optional battenberg input Min Rho
+
+=item B<-min-goodness-of-fit>
+
+Optional battenberg input Min goodness of fit
+
+=item B<-species>
+
+Reference species (default: Human)
+
+=item B<-assembly>
+
+Reference species assembly (default: 37)
+
+=item B<-protocol>
+
+Sequencing protocol (default: WGS)
+
+
+=item B<-platform>
+
+Sequencing platform (default HiSeq)
+
+=item B<-threads>
+
+Number of threads allowed on this machine (default 1)
+
+=item B<-logs>
+
+Location to write logs (default is ./logs)
+
+=item B<-process>
+
+Only process this step then exit, optionally set -index
+
+=item B<-index>
+
+Optionally restrict '-p' to single job
 
 =back
 
 =head1 DESCRIPTION
 
-B<caveman.pl> will attempt to run all caveman steps automatically including collation of output files.
+B<battenberg.pl> will attempt to run all caveman steps automatically including collation of output files.
 
 =cut
 
