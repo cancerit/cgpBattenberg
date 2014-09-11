@@ -192,7 +192,6 @@ sub setup{
 
   # required: direct input
   pod2usage(-message  => "\nERROR: rs|reference-species must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'rs'});
-
   pod2usage(-message  => "\nERROR: msq|sample-sequencing-protocol-mut must be defined.\n", -verbose => 1,  -output => \*STDERR) if(exists $opts{'msq'} && ! defined $opts{'msq'});
   pod2usage(-message  => "\nERROR: wsq|sample-sequencing-protocol-norm must be defined.\n", -verbose => 1,  -output => \*STDERR) if(exists $opts{'wsq'} && ! defined $opts{'wsq'});
 

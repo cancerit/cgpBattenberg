@@ -453,7 +453,8 @@ sub battenberg_finalise{
 														sprintf($ALLELE_COUNT_DIR,$options->{'normal_name'}),
 														$tmp,
 														$outdir,
-														undef);
+														undef,
+														$options->{'normal_name'});
 
 		_zip_and_tar_fileset($options,
 														$ALLELE_COUNT_OUTPUT,
@@ -461,7 +462,8 @@ sub battenberg_finalise{
 														sprintf($ALLELE_COUNT_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														undef);
+														undef,
+														$options->{'tumour_name'});
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]});
 	}
@@ -475,7 +477,8 @@ sub battenberg_finalise{
 														sprintf($SUBCLONE_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														$contigs);
+														$contigs,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['subclone.tar.gz',0]});
 	}
 
@@ -487,7 +490,8 @@ sub battenberg_finalise{
 														sprintf($HETDATA_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														$contigs);
+														$contigs,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['hetDataPngs.tar.gz',0]});
 	}
 
@@ -499,7 +503,8 @@ sub battenberg_finalise{
 														sprintf($HETBAFTXT_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														undef);
+														undef,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['hetBAFTxt.tar.gz',0]});
 	}
 
@@ -511,7 +516,8 @@ sub battenberg_finalise{
 														sprintf($OTHER_PNG_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														$contigs);
+														$contigs,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['other.tar.gz',0]});
 	}
 
@@ -523,7 +529,8 @@ sub battenberg_finalise{
 														sprintf($RAFSEG_PNG_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														$contigs);
+														$contigs,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['rafseg.tar.gz',0]});
 	}
 
@@ -535,7 +542,8 @@ sub battenberg_finalise{
 														sprintf($IMPUTE_INPUT_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														undef);
+														undef,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['impute_input.tar.gz',0]});
 	}
 
@@ -547,7 +555,8 @@ sub battenberg_finalise{
 														sprintf($IMPUTE_OUTPUT_DIR,$options->{'tumour_name'}),
 														$tmp,
 														$outdir,
-														undef);
+														undef,
+														$options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['impute_output.tar.gz',0]});
 	}
 
@@ -673,10 +682,10 @@ sub _run_copy_number_to_vcf{
   $command .= " -i $subcl_txt";
   $command .= " -sbm $options->{tumbam}";
   $command .= " -sbw $options->{normbam}";
-  $command .= " -ra $options->{assembly}" if(defined $options->{'assembly'});
-  $command .= " -rs $options->{species}" if(defined $options->{'species'});
-  $command .= " -msq $options->{protocol} -wsq $options->{protocol}" if(defined $options->{'protocol'});
-  $command .= " -msp $options->{platform} -wsp $options->{platform}" if(defined $options->{'platform'});
+  $command .= " -ra $options->{assembly}";
+  $command .= " -rs $options->{species}";
+  $command .= " -msq $options->{protocol} -wsq $options->{protocol}";
+  $command .= " -msp $options->{platform} -wsp $options->{platform}";
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
   return;
@@ -760,15 +769,15 @@ sub _copy_file{
 }
 
 sub _zip_and_tar_fileset{
-	my ($options,$filepattern,$tar,$dir,$location,$copyloc,$file_match_list) = @_;
+	my ($options,$filepattern,$tar,$dir,$location,$copyloc,$file_match_list,$sample_name) = @_;
 	my @files = ();
 	#Get a list of files matching the pattern
 	for(my $i=0; $i<$options->{'job_count'}; $i++){
 		my $file;
 		if(defined($file_match_list)){
-			$file = File::Spec->catfile($location,sprintf($filepattern,$options->{'tumour_name'},$file_match_list->[$i]));
+			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$file_match_list->[$i]));
 		}else{
-			$file = File::Spec->catfile($location,sprintf($filepattern,$options->{'tumour_name'},$i+1));
+			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$i+1));
 		}
 		PCAP::Cli::file_for_reading('file for tar.gz',$file);
 		push(@files,$file);
