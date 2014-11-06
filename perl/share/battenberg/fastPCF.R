@@ -499,14 +499,18 @@ getMad <- function(x,k=25){
   
   #Remove observations that are equal to zero; are likely to be imputed, should not contribute to sd:
   x <- x[x!=0]
+
+  if (length(x) == 0) {
+    # If all x_i are zero the MAD should also be zero
+    SD = 0
+  } else {  
+    #Calculate runMedian  
+    runMedian <- medianFilter(x,k)
   
-  #Calculate runMedian  
-  runMedian <- medianFilter(x,k)
-  
-  dif <- x-runMedian
-  SD <- mad(dif)
- 
-	return(SD)
+    dif <- x-runMedian
+    SD <- mad(dif)
+  }
+  return(SD)
 }
 
 
