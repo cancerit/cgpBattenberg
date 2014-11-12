@@ -1,20 +1,20 @@
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
+#
 # This file is part of battenberg.
-# 
+#
 # battenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -976,7 +976,11 @@ get_segment_info = function( segLogR , segBAF.table ) {
 
 		segs[ i, "size" ] = length( BAFke )
 		segs[ i, "mean" ] = mean( BAFke )
-		segs[ i, "sd" ] = sd( BAFke )
+		segs[ i, "sd" ] = sd( BAFke)
+    if(is.na(segs[ i, "sd" ])){
+    	segs[ i, "sd" ] = 0
+    }
+
 
   }
 
