@@ -1,20 +1,20 @@
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
+#
 # This file is part of battenberg.
-# 
+#
 # battenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -70,8 +70,12 @@ for (chr in unique(BAFraw[,1])) {
 	  sdev = 0.09
   }
 
-  res= selectFastPcf(BAF,phasekmin,phasegamma*sdev,T)
-  BAFsegm = res$yhat
+  if(length(BAF)<50){
+    BAFsegm = rep(mean(BAF),length(BAF))
+  }else{
+    res= selectFastPcf(BAF,phasekmin,phasegamma*sdev,T)
+    BAFsegm = res$yhat
+  }
 
   png(filename = paste(sample,"_RAFseg_chr",chr,".png",sep=""), width = 2000, height = 1000, res = 200)
   par(mar = c(5,5,5,0.5), cex = 0.4, cex.main=3, cex.axis = 2, cex.lab = 2)
