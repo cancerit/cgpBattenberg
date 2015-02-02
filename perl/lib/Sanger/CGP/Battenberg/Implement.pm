@@ -2,21 +2,21 @@ package Sanger::CGP::Battenberg::Implement;
 
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
+#
 # This file is part of battenberg.
-# 
+#
 # battenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -157,6 +157,7 @@ sub battenberg_allelecount{
 	}
 
 	my $loci_file = File::Spec->catfile($k_gen_loc,sprintf($ALLELE_LOCI_NAME,$lookup));
+	PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
 	my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$lookup)));
 
 	my $command = "cd $tmp; "._which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
@@ -825,7 +826,8 @@ sub _targzFileSet{
 	}
 	#Iterate through each file and copy into the folder.
 	foreach my $file_to_cp(@$fileList){
-		my $fname = fileparse($file_to_cp);
+	  my $fname = fileparse($file_to_cp);
+	  next if($options->{'is_male'} && $fname =~ m/chr(X|23)/ && ! -e $file_to_cp) #Skip if male and X results aren't present, this is allowed...
 		my $copied_loc = File::Spec->catfile($dir,$fname);
 		die("Error: Failed to copy file $file_to_cp to $copied_loc.") if(!copy($file_to_cp,$copied_loc));
 	}
