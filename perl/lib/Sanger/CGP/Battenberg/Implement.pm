@@ -799,8 +799,10 @@ sub _zip_and_tar_fileset{
 		my $file;
 		if(defined($file_match_list)){
 			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$file_match_list->[$i]));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 		}else{
 			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$i+1));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 		}
 		PCAP::Cli::file_for_reading('file for tar.gz',$file);
 		push(@files,$file);
@@ -827,7 +829,6 @@ sub _targzFileSet{
 	#Iterate through each file and copy into the folder.
 	foreach my $file_to_cp(@$fileList){
 	  my $fname = fileparse($file_to_cp);
-	  next if($options->{'is_male'} && $fname =~ m/chr(X|23)/ && ! -e $file_to_cp) #Skip if male and X results aren't present, this is allowed...
 		my $copied_loc = File::Spec->catfile($dir,$fname);
 		die("Error: Failed to copy file $file_to_cp to $copied_loc.") if(!copy($file_to_cp,$copied_loc));
 	}
