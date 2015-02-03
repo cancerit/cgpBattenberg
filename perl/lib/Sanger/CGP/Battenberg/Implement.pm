@@ -2,21 +2,21 @@ package Sanger::CGP::Battenberg::Implement;
 
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
+#
 # This file is part of battenberg.
-# 
+#
 # battenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -157,6 +157,7 @@ sub battenberg_allelecount{
 	}
 
 	my $loci_file = File::Spec->catfile($k_gen_loc,sprintf($ALLELE_LOCI_NAME,$lookup));
+	PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
 	my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$lookup)));
 
 	my $command = "cd $tmp; "._which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
@@ -586,6 +587,7 @@ sub battenberg_finalise{
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['cleanup_impute',0]}) == 0){
 		for(my $i=1; $i<=$options->{'job_count'}; $i++){
 			my $file = File::Spec->catfile($tmp,sprintf($IMPUTE_INPUT,$options->{'tumour_name'},$i));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 			unlink glob $file;
 		}
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['cleanup_impute',0]});
@@ -723,15 +725,15 @@ sub _bgzip_tabix_vcf{
   my $tabix = _which('tabix');
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  my @commands = ($bgzip, $tabix);
+  my @commands = [$bgzip, $tabix];
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
   return;
 }
 
 sub _generate_segmented_vcf{
 	my ($options,$baf,$logr,$vcf_out) = @_;
-
 	my $stripped_baf = basename($baf);
 	my $stripped_logr = basename($logr);
 
@@ -798,8 +800,10 @@ sub _zip_and_tar_fileset{
 		my $file;
 		if(defined($file_match_list)){
 			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$file_match_list->[$i]));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 		}else{
 			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$i+1));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 		}
 		PCAP::Cli::file_for_reading('file for tar.gz',$file);
 		push(@files,$file);
@@ -825,7 +829,7 @@ sub _targzFileSet{
 	}
 	#Iterate through each file and copy into the folder.
 	foreach my $file_to_cp(@$fileList){
-		my $fname = fileparse($file_to_cp);
+	  my $fname = fileparse($file_to_cp);
 		my $copied_loc = File::Spec->catfile($dir,$fname);
 		die("Error: Failed to copy file $file_to_cp to $copied_loc.") if(!copy($file_to_cp,$copied_loc));
 	}
