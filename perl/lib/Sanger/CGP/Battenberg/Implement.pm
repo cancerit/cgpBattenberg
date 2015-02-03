@@ -587,6 +587,7 @@ sub battenberg_finalise{
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['cleanup_impute',0]}) == 0){
 		for(my $i=1; $i<=$options->{'job_count'}; $i++){
 			my $file = File::Spec->catfile($tmp,sprintf($IMPUTE_INPUT,$options->{'tumour_name'},$i));
+			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 			unlink glob $file;
 		}
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['cleanup_impute',0]});
