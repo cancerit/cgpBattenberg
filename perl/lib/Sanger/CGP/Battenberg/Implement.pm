@@ -725,15 +725,15 @@ sub _bgzip_tabix_vcf{
   my $tabix = _which('tabix');
   $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  my @commands = ($bgzip, $tabix);
+  my @commands = [$bgzip, $tabix];
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), \@commands, 0);
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
+  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
   return;
 }
 
 sub _generate_segmented_vcf{
 	my ($options,$baf,$logr,$vcf_out) = @_;
-
 	my $stripped_baf = basename($baf);
 	my $stripped_logr = basename($logr);
 
