@@ -37,9 +37,12 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 
 ## Installation
 
-	See INSTALL.TXT
+Please install the following before attempting to run ``setup.sh <install_to_folder>``
 
-## Program Run Instructions
+1. [PCAP-core](https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
+2. [alleleCount](https://github.com/cancerit/alleleCount/releases)
+
+All of the items listed here use the same install method.
 
 ### Prerequisites
 
@@ -48,23 +51,21 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 * BWA Mapped, indexed, duplicate marked/removed bam files, for both a matched normal and tumour sample
 * Reference.fasta and index
 * A file containing a list of contigs in the reference .fai to ignore
-* Directory containing the 1000 genomes allele and loci data (see File Formats below).
-* Impute info file impute_info.txt (see File Formats below)
-* Prob loci file probloci.txt (see File Formats below)
 
+Some required data files are not inclued in the distribution but a script is included to generate these for you:
 
-### File Formats
+* Directory containing the 1000 genomes allele and loci data:
+** Generated using the included script ``download_generate_bberg_ref_files.pl``
+* Impute info file ``impute_info.txt``
+** Generated using the included script ``download_generate_bberg_ref_files.pl``
+* Prob loci file probloci.txt
+** Included: ``files/probloci.txt.gz``
 
-* 1000 Genomes data
+## Program Run Instructions
 
-****DW input required
+For the most up to date usage instructions for the wrapper code please see the command line help:
 
-## Impute info file
+    battenberg.pl -h
 
-****DW input required
-
-## Prob loci file
-
-****DW input required
 
 

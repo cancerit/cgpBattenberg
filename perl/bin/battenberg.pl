@@ -163,8 +163,8 @@ sub setup {
           'pl|platform=s' => \$opts{'platform'},
 		) or pod2usage(2);
 
-	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'h'});
-  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 1) if(defined $opts{'m'});
+	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 0) if(defined $opts{'h'});
+  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'m'});
 
   # then check for no args:
   my $defined;
