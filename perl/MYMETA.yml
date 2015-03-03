@@ -1,0 +1,24 @@
+---
+abstract: unknown
+author:
+  - unknown
+build_requires:
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::MakeMaker: 0
+dynamic_config: 0
+generated_by: 'ExtUtils::MakeMaker version 6.68, CPAN::Meta::Converter version 2.131560'
+license: open_source
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: cgpBattenberg
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Const::Fast: 0.014
+  LWP::Simple: 6.13
+  Try::Tiny: 0.22
+version: v1.3.0

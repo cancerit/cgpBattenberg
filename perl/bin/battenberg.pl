@@ -5,9 +5,9 @@
 #
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
 #
-# This file is part of battenberg.
+# This file is part of cgpBattenberg.
 #
-# battenberg is free software: you can redistribute it and/or modify it under
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
@@ -163,8 +163,8 @@ sub setup {
           'pl|platform=s' => \$opts{'platform'},
 		) or pod2usage(2);
 
-	pod2usage(-message => PCAP::license, -verbose => 2) if(defined $opts{'h'});
-  pod2usage(-message => PCAP::license, -verbose => 1) if(defined $opts{'m'});
+	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'h'});
+  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 1) if(defined $opts{'m'});
 
   # then check for no args:
   my $defined;

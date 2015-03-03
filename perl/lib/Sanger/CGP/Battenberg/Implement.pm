@@ -5,9 +5,9 @@ package Sanger::CGP::Battenberg::Implement;
 #
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
 #
-# This file is part of battenberg.
+# This file is part of cgpBattenberg.
 #
-# battenberg is free software: you can redistribute it and/or modify it under
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
