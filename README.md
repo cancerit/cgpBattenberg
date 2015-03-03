@@ -47,7 +47,7 @@ All of the items listed here use the same install method.
 ### Prerequisites
 
 * Impute2 executables can be found [here](https://mathgen.stats.ox.ac.uk/impute/impute_v2.html)
-** Any impute related data for download
+  * Any impute related data for download
 * BWA Mapped, indexed, duplicate marked/removed bam files, for both a matched normal and tumour sample
 * Reference.fasta and index
 * A file containing a list of contigs in the reference .fai to ignore
@@ -55,11 +55,11 @@ All of the items listed here use the same install method.
 Some required data files are not inclued in the distribution but a script is included to generate these for you:
 
 * Directory containing the 1000 genomes allele and loci data:
-** Generated using the included script ``download_generate_bberg_ref_files.pl``
+  * Generated using the included script ``download_generate_bberg_ref_files.pl``
 * Impute info file ``impute_info.txt``
-** Generated using the included script ``download_generate_bberg_ref_files.pl``
+  * Generated using the included script ``download_generate_bberg_ref_files.pl``
 * Prob loci file probloci.txt
-** Included: ``files/probloci.txt.gz``
+  * Included: ``files/probloci.txt.gz``
 
 ## Program Run Instructions
 
