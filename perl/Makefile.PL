@@ -36,7 +36,6 @@ WriteMakefile(
                         bin/download_generate_bberg_ref_files.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,
-                     'LWP::Simple' => 6.13,
                      'Try::Tiny' => 0.22,
                    }
 );
