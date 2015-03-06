@@ -35,6 +35,7 @@ use File::Path qw(make_path remove_tree);
 use File::Temp qw(tempfile);
 use File::Copy qw(copy move);
 use FindBin qw($Bin);
+use List::Util qw(first);
 use Vcf;
 
 use File::ShareDir qw(module_dir);
@@ -46,7 +47,7 @@ use PCAP::Bam;
 
 use Data::Dumper;
 
-const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d };
+const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d -r %s};
 const my $RUN_BAF_LOG => q{ %s/RunBAFLogR.R %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_ 10 %s %s };
 const my $IMPUTE_FROM_AF => q{ %s/GenerateImputeInputFromAlleleFrequencies.R %s %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_impute_input_chr %d %s};
 const my $RUN_IMPUTE => q{ %s/RunImpute.R %s %s %s %s %s_impute_input_chr %s_impute_output_chr %d};
@@ -160,13 +161,14 @@ sub battenberg_allelecount{
 	PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
 	my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$lookup)));
 
-	my $command = "cd $tmp; "._which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
+	my $command = _which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
 
 	$command .= sprintf($ALLELE_COUNT_CMD,
 							$loci_file,
 							$input,
 							$alleleCountOut,
-							$options->{'mbq'}
+							$options->{'mbq'},
+							$options->{'reference'},
 							);
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
@@ -881,25 +883,15 @@ sub _extractRhoPsiFromFile{
 sub file_line_count_with_ignore{
 	my ($file,$ignore_contigs) = @_;
 	my $contig_count = 0;
-  {
-    my $FH;
-    open($FH, '<', $file) or die("Error trying to open $file: $!\n");
-    	while(<$FH>){
-    		my $line = $_;
-    		chomp($line);
-    		my ($contig,undef) = split(/\s+/,$line);
-    		my $match = 0;
-    		foreach my $ign(@$ignore_contigs){
-    			if("$ign" eq "$contig"){
-    				$match = 1;
-    				last;
-    			}
-    		}
-    		next if($match);
-    		$contig_count++;
-    	}
-    close($FH);
+  open my $FH, '<', $file or die("Error trying to open $file: $!\n");
+  while(<$FH>){
+    my $line = $_;
+    chomp($line);
+    my ($contig,undef) = split(/\s+/,$line);
+    next if(first {$_ eq $contig} @{$ignore_contigs});
+    $contig_count++;
   }
+  close($FH);
   return $contig_count;
 }
 
