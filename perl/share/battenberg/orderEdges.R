@@ -1,20 +1,20 @@
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
-# This file is part of battenberg.
-# 
-# battenberg is free software: you can redistribute it and/or modify it under
+#
+# This file is part of cgpBattenberg.
+#
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -102,7 +102,7 @@ orderEdges = function(levels, l, ntot,x,y){
     	nMaj1[negative.CN]=NA
     	nMin1[negative.CN]=NA
     	nMaj2[negative.CN]=NA
-    	nMin2[negative.CN]=NA    	
+    	nMin2[negative.CN]=NA
     	return(cbind(nMaj1,nMin1,nMaj2,nMin2))
 	}else{
     	return(cbind(nMaj1,nMin1,nMaj2,nMin2))
@@ -112,7 +112,7 @@ orderEdges = function(levels, l, ntot,x,y){
 ####################################################################################################
 # From DW 14-2-2014
 # Rather than calculating likelihood ratios by considering all 4 corners and then finding the LR of the best 2,
-# we should first identify the nearest edge and then just compare the vertices at the end of this edge. 
+# we should first identify the nearest edge and then just compare the vertices at the end of this edge.
 #
 # kjd 14-2-2014
 # There is a problem of BAF_levels[i] = NA (i = 3)
@@ -122,19 +122,19 @@ orderEdges = function(levels, l, ntot,x,y){
 #DCW 270314 - this problem has now been fixed, so NaN values shouldn't be input to this function
 
 GetNearestCorners_bestOption <-function( rho, psi, BAFreq, nMajor, nMinor )
-{	
+{
 	nMaj = c(floor(nMajor),ceiling(nMajor),floor(nMajor),ceiling(nMajor))
 	nMin = c(ceiling(nMinor),ceiling(nMinor),floor(nMinor),floor(nMinor))
 	x = floor(nMinor)
 	y = floor(nMajor)
-		
+
 	# total copy number, to determine priority options
 	ntot = nMajor + nMinor
-	
+
 	BAF_levels = (1-rho+rho*nMaj)/(2-2*rho+rho*(nMaj+nMin))
     #problem if rho=1 and nMaj=0 and nMin=0
     BAF_levels[nMaj==0 & nMin==0] = 0.5
-    
+
 	nMaj1 = NULL
     nMin1 = NULL
     nMaj2 = NULL
@@ -189,12 +189,12 @@ GetNearestCorners_bestOption <-function( rho, psi, BAFreq, nMajor, nMinor )
         nMin2 = x+1
       }
     }
-    
+
     nMaj_vect = c( nMaj1, nMaj2 )
     nMin_vect = c( nMin1, nMin2 )
-    
+
     nearest_segment = list( nMaj = nMaj_vect, nMin = nMin_vect )
-    
+
     return( nearest_segment )
-    
+
 }

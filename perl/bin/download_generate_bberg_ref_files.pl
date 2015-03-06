@@ -5,9 +5,9 @@
 #
 # Author: David Jones <cgpit@sanger.ac.uk>
 #
-# This file is part of battenberg.
+# This file is part of cgpBattenberg.
 #
-# battenberg is free software: you can redistribute it and/or modify it under
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
@@ -37,7 +37,8 @@ use Getopt::Long;
 use File::Copy qw(move);
 use Pod::Usage qw(pod2usage);
 use Const::Fast qw(const);
-use LWP::Simple qw(getstore is_success);
+use File::Fetch;
+use File::Basename;
 use Archive::Extract;
 use Carp;
 
@@ -130,7 +131,7 @@ my $DOWNLOAD_VERSION = "v3";
 
 sub cleanup{
   my ($opts) = @_;
-  remove_tree($opts->{'tmp'}) or croak("Error removing tmporary directory $opts->{tmp}");
+  remove_tree($opts->{'tmp'}) or croak("Error removing temporary directory $opts->{tmp}");
   return;
 }
 
@@ -282,8 +283,7 @@ sub download_unpack_files{
 	my ($opts) = @_;
 	my $impute_download = $opts->{'u'}.sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION);
 	my $imputetgz = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION));
-	#my $imputeout = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_UNPACK_PATTERN,$DOWNLOAD_VERSION));
-	download_file($impute_download,$imputetgz) if(! -e $imputetgz);
+	download_file($impute_download,$imputetgz) unless(-e $imputetgz.'.dl_success');
 	unpack_file($imputetgz,$opts->{'tmp'},'tgz');
 	return;
 }
@@ -297,7 +297,20 @@ sub unpack_file{
 
 sub download_file{
 	my ($url,$file) = @_;
-	croak("Error downloading $url to $file, was the version '$DOWNLOAD_VERSION' correct?\n") unless(is_success(getstore($url, $file)));
+	my $dirname  = dirname($file);
+	$File::Fetch::BLACKLIST = [qw(lwp)];
+	$url =~ s/^https/http/;
+	my $ff = File::Fetch->new(uri => $url);
+	my $local = $ff->fetch(to => $dirname) or croak $ff->error;
+	# if the filename isn't what we expect move it
+	unless($local eq $file) {
+	  move($local, $file) or croak $!;
+	}
+	# touch a file to show the archive is complete and not partial to prevent re-dl (3.7GB) if this bit is successful
+	# likely use case would be running out of disk space during unpacking intermediate space required is ~16GB
+	my $success_file = $file.'.dl_success';
+	open my $x, '>', $success_file;
+	close $x;
 	return;
 }
 
@@ -376,9 +389,10 @@ download_generate_bberg_ref_files.pl [options]
 
 =item B<-out-dir>
 
-Directory to write downloaded and manipulated files to.
+Directory to write downloaded and manipulated files to. ~16GB is required during processing.
 Stores download in a sub tmp directory, then creates subdirectories
 1000genomesloci and impute, alongside impute.info in the specified directory before deleting <your-dir>/tmp
+Final output is ~7.6GB.
 
 =item B<-url>
 
