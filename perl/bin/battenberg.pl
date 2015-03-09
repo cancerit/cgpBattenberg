@@ -1,20 +1,22 @@
+#!/usr/bin/perl
+
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
-# This file is part of battenberg.
-# 
-# battenberg is free software: you can redistribute it and/or modify it under
+#
+# This file is part of cgpBattenberg.
+#
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -22,6 +24,9 @@
 use strict;
 use warnings FATAL => 'all';
 use autodie qw(:all);
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 
 use File::Path qw( remove_tree make_path );
 use File::Spec;
@@ -39,7 +44,7 @@ const my @VALID_PROCESS => qw( allelecount baflog imputefromaf
 															cleanuppostbaf plothaplotypes combinebafs
 															segmentphased fitcn subclones finalise );
 
-const my @VALID_PROTOCOLS => qw( WGS WGX RNA );
+const my @VALID_PROTOCOLS => qw( WGS WXS RNA );
 
 const my $DEFAULT_ALLELE_COUNT_MBQ => 20;
 const my $DEFAULT_PLATFORM_GAMMA=>1;
@@ -52,10 +57,8 @@ const my $DEFAULT_MAX_PLOIDY=>4.8;
 const my $DEFAULT_MIN_RHO=>0.1;
 const my $DEFAULT_MIN_GOODNESS_OF_FIT=>0.63;
 const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
-const my $DEFAULT_SPECIES => 'Human';
-const my $DEFAULT_SPP_ASSEMBLY => '37';
 const my $DEFAULT_PROTOCOL => 'WGS';
-const my $DEFAULT_PLATFORM => 'HiSeq';
+const my $DEFAULT_PLATFORM => 'ILLUMINA';
 
 my %index_max = ( 'allelecount' => -1,
 									'baflog' => 1,
@@ -88,24 +91,22 @@ my %index_max = ( 'allelecount' => -1,
 	$threads->add_function('battenberg_postbafcleanup', \&Sanger::CGP::Battenberg::Implement::battenberg_postbafcleanup);
 	$threads->add_function('battenberg_plothaplotypes', \&Sanger::CGP::Battenberg::Implement::battenberg_plothaplotypes);
 
-	my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($options->{'reference'},$options->{'ignored_contigs'});
-	$options->{'job_count'} = $no_of_jobs;
   #Now the single processes built into the battenberg flow in order of execution.
-  $threads->run(($no_of_jobs*2), 'battenberg_allelecount', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'allelecount');
+  $threads->run(($options->{'job_count'}*2), 'battenberg_allelecount', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'allelecount');
 
 	Sanger::CGP::Battenberg::Implement::battenberg_runbaflog($options) if(!exists $options->{'process'} || $options->{'process'} eq 'baflog');
 
-	$threads->run($no_of_jobs, 'battenberg_imputefromaf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'imputefromaf');
+	$threads->run($options->{'job_count'}, 'battenberg_imputefromaf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'imputefromaf');
 
-	$threads->run($no_of_jobs, 'battenberg_runimpute', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'impute');
+	$threads->run($options->{'job_count'}, 'battenberg_runimpute', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'impute');
 
-	$threads->run($no_of_jobs, 'battenberg_combineimpute', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'combineimpute');
+	$threads->run($options->{'job_count'}, 'battenberg_combineimpute', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'combineimpute');
 
-	$threads->run($no_of_jobs, 'battenberg_haplotypebaf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'haplotypebafs');
+	$threads->run($options->{'job_count'}, 'battenberg_haplotypebaf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'haplotypebafs');
 
-	$threads->run($no_of_jobs, 'battenberg_postbafcleanup', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'cleanuppostbaf');
+	$threads->run($options->{'job_count'}, 'battenberg_postbafcleanup', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'cleanuppostbaf');
 
-	$threads->run($no_of_jobs, 'battenberg_plothaplotypes', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'plothaplotypes');
+	$threads->run($options->{'job_count'}, 'battenberg_plothaplotypes', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'plothaplotypes');
 
 	Sanger::CGP::Battenberg::Implement::battenberg_combinebafs($options) if(!exists $options->{'process'} || $options->{'process'} eq 'combinebafs');
 
@@ -131,7 +132,6 @@ sub setup {
 					'nb|normal-bam=s' => \$opts{'normbam'},
 					't|threads=i' => \$opts{'threads'},
 					'i|index=i' => \$opts{'index'},
-					'l|limit=i' => \$opts{'limit'},
 					'p|process=s' => \$opts{'process'},
 					'u|thousand-genomes-loc=s' => \$opts{'1kgenloc'},
 					'r|reference=s' => \$opts{'reference'},
@@ -156,10 +156,11 @@ sub setup {
           'ra|assembly=s' => \$opts{'assembly'},
           'pr|protocol=s' => \$opts{'protocol'},
           'pl|platform=s' => \$opts{'platform'},
+          'j|jobs' => \$opts{'jobs'},
 		) or pod2usage(2);
 
-	pod2usage(-message => PCAP::license, -verbose => 2) if(defined $opts{'h'});
-  pod2usage(-message => PCAP::license, -verbose => 1) if(defined $opts{'m'});
+	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 0) if(defined $opts{'h'});
+  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'m'});
 
   # then check for no args:
   my $defined;
@@ -185,28 +186,36 @@ sub setup {
 
 	delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
-  delete $opts{'limit'} unless(defined $opts{'limit'});
 
-	my $bad_prot = 1;
-  if(exists $opts{'protocol'}) {
-		for my $test_pr(@VALID_PROTOCOLS){
-			if($test_pr eq $opts{'protocol'}){
-				$bad_prot = 0;
-			}
-		}
+  if(exists $opts{'protocol'} && defined $opts{'protocol'}) {
+    my $bad_prot = 1;
+		$bad_prot = 0 if(first { $_ eq $opts{'protocol'} } @VALID_PROTOCOLS);
+		pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
   }
 
-  pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
+  my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
+  $opts{'job_count'} = $no_of_jobs;
 
 	if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
+
+    my $jobs = 1;
+    if(exists $opts{'process'} && defined $opts{'process'}) {
+      if($opts{'process'} eq 'allelecount') {
+        $jobs = $no_of_jobs*2;
+      }
+      elsif(first {$opts{'process'} eq $_} (qw(imputefromaf impute combineimpute haplotypebafs cleanuppostbaf plothaplotypes))) {
+        $jobs = $no_of_jobs;
+      }
+      if(exists $opts{'jobs'} && defined $opts{'jobs'}) {
+        print "Jobs to complete process '$opts{process}' = $jobs\n";
+        exit;
+      }
+    }
+
     if(exists $opts{'index'}) {
       my $max = $index_max{$opts{'process'}};
-      if($max==-1){
-        if(exists $opts{'limit'}) {
-          $max = $opts{'limit'};
-        }
-      }
+      $max = $jobs if($max==-1);
 
       die "ERROR: based on reference and exclude option index must be between 1 and $max\n" if($opts{'index'} < 1 || $opts{'index'} > $max);
       PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
@@ -262,8 +271,6 @@ sub setup {
 	$opts{'min_rho'} = $DEFAULT_MIN_RHO if(!exists($opts{'min_rho'}) || !defined($opts{'min_rho'}));
 	$opts{'min_goodness'} = $DEFAULT_MIN_GOODNESS_OF_FIT if(!exists($opts{'min_goodness'}) || !defined($opts{'min_goodness'}));
 
-	$opts{'species'} = $DEFAULT_SPECIES if(!exists($opts{'species'}) || !defined($opts{'species'}));
-	$opts{'assembly'} = $DEFAULT_SPP_ASSEMBLY if(!exists($opts{'assembly'}) || !defined($opts{'assembly'}));
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
 
@@ -291,6 +298,7 @@ battenberg.pl [options]
     -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
     -prob-loci             -c   Location of prob_loci.txt file
     -ignore-contigs-file   -ig  File containing contigs to ignore
+                                - specifically male sex chromosome, mitochondria and non primary contigs
 
    Optional parameters:
     -min-bq-allcount       -q   Minimum base quality to permit allele counting [20]
@@ -304,19 +312,19 @@ battenberg.pl [options]
     -max-ploidy            -xp  Max ploidy [4.8]
     -min-rho               -mr  Min Rho [0.1]
     -min-goodness-of-fit   -mg  Min goodness of fit [0.63]
-    -species               -rs  Reference species [Human]
-    -assembly              -ra  Reference assembly [37]
+    -species               -rs  Reference species []
+    -assembly              -ra  Reference assembly []
     -protocol              -pr  Sequencing protocol [WGS]
-    -platform              -pl  Sequencing platfrom [HiSeq]
+    -platform              -pl  Sequencing platfrom [ILLUMINA]
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)
-    -limit             -l   Limit the number of jobs required for m/estep (default undef)
     -logs              -g   Location to write logs (default is ./logs)
 
    Targeted processing (further detail under OPTIONS):
     -process  -p  Only process this step then exit, optionally set -index
     -index    -i  Optionally restrict '-p' to single job
+    -jobs     -j  Declare with -p to determine how many jobs are needed for this step
 
    Other:
     -help     -h  Brief help message.
@@ -461,7 +469,27 @@ Location to write logs (default is ./logs)
 
 =item B<-process>
 
-Only process this step then exit, optionally set -index
+Only process this step then exit, optionally set -index.  The order of steps is as follows:
+
+    allelecount *
+    baflog
+    imputefromaf *
+    impute *
+    combineimpute *
+    haplotypebafs *
+    cleanuppostbaf *
+    plothaplotypes *
+    combinebafs
+    segmentphased
+    fitcn
+    subclones
+    finalise
+
+'*' denotes that the step has parallel processing.  You can determine the total number by executing the command as:
+
+    battenberg.pl ...... -p <PROCESS> -j
+
+1 to this value can be used with '-i' on these processes.  For all other steps please use '-i 1'.
 
 =item B<-index>
 

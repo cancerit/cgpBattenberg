@@ -1,20 +1,20 @@
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd.
-# 
+#
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
-# 
-# This file is part of battenberg.
-# 
-# battenberg is free software: you can redistribute it and/or modify it under
+#
+# This file is part of cgpBattenberg.
+#
+# cgpBattenberg is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
 # later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
@@ -195,7 +195,7 @@ PottsCompact <- function(kmin, gamma, nr, res, sq, yest) {
     		Sum[2:k]<-Sum[2:k]+res[k]
     		Kvad[2:k] <- Kvad[2:k]+sq[k]
     		bestCost[k] <- (initKvad+Kvad[2])-(initSum+Sum[2])^2/(initAnt+Ant[2])
-		k <- k+1	
+		k <- k+1
   	}
   	for (n in k:N) {
 		Ant[2:n] <- Ant[2:n]+nr[n]
@@ -224,7 +224,7 @@ PottsCompact <- function(kmin, gamma, nr, res, sq, yest) {
 }
 
 compact <- function(y,mark){
-## accumulates numbers of observations, sums and 
+## accumulates numbers of observations, sums and
 ## sums of squares between potential breakpoints
  	N <- length(y)
 	tell<-seq(1:N)
@@ -264,7 +264,7 @@ findEst <- function(bestSplit,N,Nr,Sum,yest){
 		startOrig[i+1] <- startOrig[i]+lengdeOrig[i]
 		verdi[i]<-sum(Sum[start[i]:(start[i+1]-1)])/lengdeOrig[i]
 	}
-	
+
 	if(yest){
 		yhat<-rep(0,startOrig[antInt+1]-1)
 		for (i in 1:antInt){
@@ -276,7 +276,7 @@ findEst <- function(bestSplit,N,Nr,Sum,yest){
 		startOrig<-startOrig[1:antInt]
 		return(list(Lengde=lengdeOrig,sta=startOrig,mean=verdi,nIntervals=antInt))
 	}
-	
+
 }
 
 
@@ -307,7 +307,7 @@ markWithPotts <- function(kmin, gamma, nr, res, sq, subsize) {
     		Sum[2:k]<-Sum[2:k]+res[k]
     		Kvad[2:k] <- Kvad[2:k]+sq[k]
     		bestCost[k] <- (initKvad+Kvad[2])-(initSum+Sum[2])^2/(initAnt+Ant[2])
-		k <- k+1	
+		k <- k+1
   	}
   	for (n in k:N) {
 		Ant[2:n] <- Ant[2:n]+nr[n]
@@ -336,7 +336,7 @@ findMarks <- function(markSub,Nr,subsize){
 	## markSub: marks in compressed scale
 	## NR: number of observations between potenstial breakpoints
 	mark<-rep(FALSE,subsize)  ## marks in original scale
-	if(sum(markSub)<1) {return(mark)} else {	
+	if(sum(markSub)<1) {return(mark)} else {
 		N<-length(markSub)
 		ant <- seq(1:N)
 		help <- ant[markSub]
@@ -355,12 +355,12 @@ findMarks <- function(markSub,Nr,subsize){
 		}
 		return(mark)
 	}
-	
+
 }
 
 
 compact <- function(y,mark){
-## accumulates numbers of observations, sums and 
+## accumulates numbers of observations, sums and
 ## sums of squares between potential breakpoints
 ## y:  array to be compacted
 ## mark:  logical array of potential breakpoints
@@ -391,7 +391,7 @@ filterMarkS4 <- function(x,kmin,L,L2,frac1,frac2,frac3,thres){
 	ind13<-ind11+3*L
 	ind14<-ind11+5*L
 	ind15<-ind11+6*L
-	cost1<-abs(4*xc[ind13]-xc[ind11]-xc[ind12]-xc[ind14]-xc[ind15])	
+	cost1<-abs(4*xc[ind13]-xc[ind11]-xc[ind12]-xc[ind14]-xc[ind15])
 	cost1<-c(rep(0,3*L-1),cost1,rep(0,3*L))
 	##mark shortening in here
 	in1<-1:(lengdeArr-6)
@@ -406,9 +406,9 @@ filterMarkS4 <- function(x,kmin,L,L2,frac1,frac2,frac3,thres){
 	cost1B<-cost1[cost1>=thres*test]
 	frac1B<-min(0.8,frac1*length(cost1)/length(cost1B))
 	limit <- quantile(cost1B,(1-frac1B),names=FALSE)
-	mark<-(cost1>limit)&(cost1>0.9*test)	
-	
-	
+	mark<-(cost1>limit)&(cost1>0.9*test)
+
+
 	ind21<-1:(lengdeArr-6*L2+1)
 	ind22<-ind21+L2
 	ind23<-ind21+3*L2
@@ -459,7 +459,7 @@ filterMarkS4 <- function(x,kmin,L,L2,frac1,frac2,frac3,thres){
 		mark[kmin:(3*L-1)]<-TRUE
 		mark[(lengdeArr-3*L+1):(lengdeArr-kmin)]<-TRUE
 		mark[(lengdeArr-kmin+1):(lengdeArr-1)]<-FALSE
-		mark[lengdeArr]<-TRUE	
+		mark[lengdeArr]<-TRUE
 	}
 	else
 	{
@@ -496,17 +496,17 @@ filterMarkS4 <- function(x,kmin,L,L2,frac1,frac2,frac3,thres){
 
 
 getMad <- function(x,k=25){
-  
+
   #Remove observations that are equal to zero; are likely to be imputed, should not contribute to sd:
   x <- x[x!=0]
 
   if (length(x) == 0) {
     # If all x_i are zero the MAD should also be zero
     SD = 0
-  } else {  
-    #Calculate runMedian  
+  } else {
+    #Calculate runMedian
     runMedian <- medianFilter(x,k)
-  
+
     dif <- x-runMedian
     SD <- mad(dif)
   }
@@ -536,7 +536,7 @@ getMad <- function(x,k=25){
 medianFilter <- function(x,k){
   n <- length(x)
   filtWidth <- 2*k + 1
-  
+
   #Make sure filtWidth does not exceed n
   if(filtWidth > n){
     if(n==0){
@@ -548,7 +548,7 @@ medianFilter <- function(x,k){
       filtWidth <- n
     }
   }
-  
+
   runMedian <- runmed(x,k=filtWidth,endrule="median")
 
   return(runMedian)
