@@ -53,21 +53,16 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 	my $reference = $opts->{'r'};
 	$reference =~ s/\.fai$//g;
 
-  my $mt_sam = Bio::DB::Sam->new(-bam => $opts->{'sbm'}, -fasta => $reference);
-  my $wt_sam = Bio::DB::Sam->new(-bam => $opts->{'sbw'}, -fasta => $reference);
-
-  #parse samples and contigs from the bam files.
-  my $contigs = Sanger::CGP::Vcf::BamUtil->parse_contigs($mt_sam->header->text.$wt_sam->header->text,$opts->{'rs'},$opts->{'ra'});
-  my $mt_samples = Sanger::CGP::Vcf::BamUtil->parse_samples($mt_sam->header->text,$opts->{'mss'},$opts->{'msq'},$opts->{'msa'},$opts->{'msc'},$opts->{'msd'},$opts->{'msp'});
-  my $wt_samples = Sanger::CGP::Vcf::BamUtil->parse_samples($wt_sam->header->text,$opts->{'wss'},$opts->{'wsq'},$opts->{'wsa'},$opts->{'wsc'},$opts->{'wsd'},$opts->{'wsp'});
-
-  # close files we're finished with
+  #parse samples and contigs from the bam files or command line args.
+  my ($mt_samples, $mt_sam) = parse_samples($opts, 'tumour', $reference);
+  my ($wt_samples, $wt_sam) = parse_samples($opts, 'normal', $reference);
+  my $contigs = parse_contigs($opts, $mt_sam, $wt_sam);
   undef $mt_sam;
   undef $wt_sam;
 
-  die "No samples found in normal bam file." if(scalar values %$wt_samples == 0);
+  die "No samples found in normal bam file (or command line)." if(scalar values %$wt_samples == 0);
   die "Multiple samples found in normal bam file." if(scalar values %$wt_samples > 1);
-  die "No samples found in mutant bam file." if(scalar values %$mt_samples == 0);
+  die "No samples found in mutant bam file (or command line)." if(scalar values %$mt_samples == 0);
   die "Multiple samples found in mutant bam file." if(scalar values %$mt_samples > 1);
 
   #Setup the converter with the parsed contigs
@@ -142,6 +137,63 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 
 }
 
+sub parse_contigs {
+  my ($opts, $mt_sam, $wt_sam) = @_;
+  my $contigs;
+  if(defined $mt_sam) {
+    $contigs = Sanger::CGP::Vcf::BamUtil->parse_contigs($mt_sam->header->text.$wt_sam->header->text,
+                                                        $opts->{'rs'},
+                                                        $opts->{'ra'});
+  }
+  else {
+    open my $REF, '<', $opts->{'r'};
+    while(my $line = <$REF>) {
+      my ($name, $length) = (split /\t/, $line)[0,1];
+      my $contig = new Sanger::CGP::Vcf::Contig(
+        -name => $name,
+        -length => $length,
+        -assembly => $opts->{'ra'},
+        -species => $opts->{'rs'}
+      );
+      $contigs->{$name} = $contig;
+    }
+    close $REF;
+  }
+  return $contigs;
+}
+
+sub parse_samples {
+  my ($opts, $type, $reference) = @_;
+  my ($param_mod, $sam, $samp_ref);
+  if($type eq 'tumour') {
+    $param_mod = 'm';
+  }
+  elsif($type eq 'normal') {
+    $param_mod = 'w';
+  }
+  if(defined $opts->{'sb'.$param_mod}) {
+    $sam = Bio::DB::Sam->new(-bam => $opts->{'sb'.$param_mod}, -fasta => $reference);
+    $samp_ref = Sanger::CGP::Vcf::BamUtil->parse_samples($sam->header->text,
+                                                          $opts->{$param_mod.'ss'},
+                                                          $opts->{$param_mod.'sq'},
+                                                          $opts->{$param_mod.'sa'},
+                                                          $opts->{$param_mod.'sc'},
+                                                          $opts->{$param_mod.'sd'},
+                                                          $opts->{$param_mod.'sp'});
+  }
+  elsif(defined $opts->{$param_mod.'sn'}) {
+    $samp_ref->{$opts->{$param_mod.'sn'}} = new Sanger::CGP::Vcf::Sample(
+        -name =>              $opts->{$param_mod.'sn'},
+        -study =>             $opts->{$param_mod.'ss'},
+        -platform =>          $opts->{$param_mod.'sp'},
+        -seq_protocol =>      $opts->{$param_mod.'sq'},
+        -accession =>         $opts->{$param_mod.'sa'},
+        -accession_source =>  $opts->{$param_mod.'sc'},
+        -description =>       $opts->{$param_mod.'sd'},);
+  }
+  return ($samp_ref, $sam);
+}
+
 sub setup{
   my %opts;
   #Store the command used to run this script.
@@ -153,12 +205,14 @@ sub setup{
 					'v|version' => \$opts{'v'},
 					'o|out-file=s' => \$opts{'o'},
           'f|in-file=s' => \$opts{'i'},
+          'msn|sample-name-mut=s' => \$opts{'msn'},
           'mss|sample-study-mut=s' => \$opts{'mss'},
           'msa|sample-accession-mut=s' => \$opts{'msa'},
           'msc|sample-accession-source-mut=s' => \$opts{'msc'},
           'msp|seq-platform-mut=s' => \$opts{'msp'},
           'msq|sample-sequencing-protocol-mut=s' =>\$opts{'msq'},
           'msd|sample-description-mut=s' => \$opts{'msd'},
+          'wsn|sample-name-mut=s' => \$opts{'wsn'},
           'wss|sample-study-norm=s' => \$opts{'wss'},
           'wsa|sample-accession-norm=s' => \$opts{'wsa'},
           'wsc|sample-accession-source-norm=s' => \$opts{'wsc'},
@@ -186,8 +240,12 @@ sub setup{
     # can come from STDIN if not defined
     PCAP::Cli::file_for_reading('i', $opts{'i'});
   }
-  PCAP::Cli::file_for_reading('sbm', $opts{'sbm'});
-  PCAP::Cli::file_for_reading('sbw', $opts{'sbw'});
+  unless(defined $opts{'msn'}) {
+    PCAP::Cli::file_for_reading('sbm', $opts{'sbm'});
+  }
+  unless(defined $opts{'wsn'}) {
+    PCAP::Cli::file_for_reading('sbw', $opts{'sbw'});
+  }
   PCAP::Cli::file_for_reading('r', $opts{'r'});
 
   # required: direct input
