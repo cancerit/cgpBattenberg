@@ -89,7 +89,9 @@ const my $IMPUTE_OUTPUT_TAR => q{%s_impute_output.tar.gz};
 const my $IMPUTE_OUTPUT_DIR => q{%s_impute_output};
 const my $SUNRISE_PNG	=> q{%s_distance.png};
 const my $TUMOUR_PNG	=> q{%s_Tumor%s.png};
+const my $TUMOUR_CORRECTED_PNG	=> q{%s_Tumor.png};
 const my $NORMAL_PNG	=> q{%s_Germline%s.png};
+const my $NORMAL_CORRECTED_PNG	=> q{%s_Germline.png};
 const my $COPY_NO_PNG	=> q{%s_second_copynumberprofile.png};
 const my $NON_ROUNDED_PNG	=> q{%s_second_nonroundedprofile.png};
 const my $ALT_COPY_NO_ROUNDED_PNG => q{%s_copynumberprofile.png};
@@ -125,10 +127,16 @@ const my @BATTENBERG_RESULT_FILES => qw(
 
 sub prepare {
   my $options = shift;
-  $options->{'tumbam'} = File::Spec->rel2abs($options->{'tumbam'});
-	$options->{'normbam'} = File::Spec->rel2abs($options->{'normbam'});
-  $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}))[0];
-  $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}))[0];
+  if(exists $options->{'allele-counts'} && defined $options->{'allele-counts'}) {
+    $options->{'tumour_name'} = $options->{'tumbam'};
+    $options->{'normal_name'} = $options->{'normbam'};
+  }
+  else {
+    $options->{'tumbam'} = File::Spec->rel2abs($options->{'tumbam'});
+    $options->{'normbam'} = File::Spec->rel2abs($options->{'normbam'});
+    $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}))[0];
+    $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}))[0];
+  }
   my $mod_path = dirname(abs_path($0)).'/../share';
   $mod_path = module_dir('Sanger::CGP::Battenberg::Implement') unless(-e File::Spec->catdir($mod_path, 'battenberg'));
 	$options->{'mod_path'} = $mod_path;
@@ -161,17 +169,44 @@ sub battenberg_allelecount{
 	PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
 	my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$lookup)));
 
-	my $command = _which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
+	if(exists $options->{'allele-counts'} && defined $options->{'allele-counts'}) {
+	  unless($index == 1) {
+	    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+	    return 1;
+	  }
 
-	$command .= sprintf($ALLELE_COUNT_CMD,
-							$loci_file,
-							$input,
-							$alleleCountOut,
-							$options->{'mbq'},
-							$options->{'reference'},
-							);
+	  # expand the file and put the data in the expected locations
+	  my $command = sprintf 'tar -C %s -zxf %s', $tmp, $options->{'allele-counts'};
 
-	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+	  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+
+	  # then they have to be renamed:
+	  # %s_alleleFrequencies_chr%d.txt
+	  my $sampdir = File::Spec->catdir($tmp, $options->{'tumour_name'});
+	  opendir(my $dh, $sampdir) || die "ERROR opening $sampdir: $!";
+	  while(my $thing = readdir $dh) {
+  	  if($thing =~ m/^(.*)[.]([^.]+)[.]tsv$/) {
+  	    my $samp = $1;
+  	    my $chr = $2;
+  	    my $moved = File::Spec->catfile($tmp, sprintf $ALLELE_COUNT_OUTPUT, $samp, $chr);
+  	    my $orig = File::Spec->catfile($sampdir, $thing);
+  	    move($orig, $moved) || die "Unable to move file $orig -> $moved";
+  	  }
+  	}
+	  remove_tree(File::Spec->catdir($tmp, $options->{'tumour_name'}));
+	}
+  else {
+    my $command = _which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
+
+    $command .= sprintf($ALLELE_COUNT_CMD,
+                $loci_file,
+                $input,
+                $alleleCountOut,
+                $options->{'mbq'},
+                $options->{'reference'},
+                );
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+	}
 
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
 
@@ -635,48 +670,53 @@ sub battenberg_finalise{
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]}) == 0){
 		#Now copy (and tar gz) some per run files.
 		#Sunrise plot
-		my $sunrise = File::Spec->catfile($tmp,sprintf($SUNRISE_PNG,$options->{'tumour_name'}));
-		my $sunrise_copy = File::Spec->catfile($outdir,sprintf($SUNRISE_PNG,$options->{'tumour_name'}));
+
+    my $tumour_name = $options->{'tumour_name'};
+		my $tumour_dot = $tumour_name;
+		$tumour_dot =~ s/[-]/./g;
+
+		my $sunrise = File::Spec->catfile($tmp,sprintf($SUNRISE_PNG,$tumour_name));
+		my $sunrise_copy = File::Spec->catfile($outdir,sprintf($SUNRISE_PNG,$tumour_name));
 		_copy_file($sunrise,$sunrise_copy);
 		#Tumour png
-		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$options->{'tumour_name'},$options->{'tumour_name'}));
-		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_PNG,$options->{'tumour_name'},$options->{'tumour_name'}));
+		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name,$tumour_dot));
+		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_CORRECTED_PNG,$tumour_name));
 		_copy_file($tumour,$tumour_copy);
 		#Normal png
-		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$options->{'tumour_name'},$options->{'tumour_name'}));
-		my $normal_copy = File::Spec->catfile($outdir,sprintf($NORMAL_PNG,$options->{'tumour_name'},$options->{'tumour_name'}));
+		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$tumour_name,$tumour_dot));
+		my $normal_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CORRECTED_PNG,$tumour_name));
 		_copy_file($normal,$normal_copy);
 		#Copy no
-		my $copyno = File::Spec->catfile($tmp,sprintf($COPY_NO_PNG,$options->{'tumour_name'}));
-		my $copyno_copy = File::Spec->catfile($outdir,sprintf($COPY_NO_PNG,$options->{'tumour_name'}));
+		my $copyno = File::Spec->catfile($tmp,sprintf($COPY_NO_PNG,$tumour_name));
+		my $copyno_copy = File::Spec->catfile($outdir,sprintf($COPY_NO_PNG,$tumour_name));
 		_copy_file($copyno,$copyno_copy);
 		#Non rounded copy number
-		my $nonrounded = File::Spec->catfile($tmp,sprintf($NON_ROUNDED_PNG,$options->{'tumour_name'}));
-		my $nonrounded_copy = File::Spec->catfile($outdir,sprintf($NON_ROUNDED_PNG,$options->{'tumour_name'}));
+		my $nonrounded = File::Spec->catfile($tmp,sprintf($NON_ROUNDED_PNG,$tumour_name));
+		my $nonrounded_copy = File::Spec->catfile($outdir,sprintf($NON_ROUNDED_PNG,$tumour_name));
 		_copy_file($nonrounded,$nonrounded_copy);
 		#alt_non_rounded copy number
-		my $alt_non_rounded = File::Spec->catfile($tmp,sprintf($ALT_COPY_NO_ROUNDED_PNG,$options->{'tumour_name'}));
-		my $alt_non_rounded_copy = File::Spec->catfile($outdir,sprintf($ALT_COPY_NO_ROUNDED_PNG,$options->{'tumour_name'}));
+		my $alt_non_rounded = File::Spec->catfile($tmp,sprintf($ALT_COPY_NO_ROUNDED_PNG,$tumour_name));
+		my $alt_non_rounded_copy = File::Spec->catfile($outdir,sprintf($ALT_COPY_NO_ROUNDED_PNG,$tumour_name));
 		_copy_file($alt_non_rounded,$alt_non_rounded_copy);
 		#Alt cn
-		my $alt_cn = File::Spec->catfile($tmp,sprintf($ALT_NON_ROUNDED_PNG,$options->{'tumour_name'}));
-		my $alt_cn_copy = File::Spec->catfile($outdir,sprintf($ALT_NON_ROUNDED_PNG,$options->{'tumour_name'}));
+		my $alt_cn = File::Spec->catfile($tmp,sprintf($ALT_NON_ROUNDED_PNG,$tumour_name));
+		my $alt_cn_copy = File::Spec->catfile($outdir,sprintf($ALT_NON_ROUNDED_PNG,$tumour_name));
 		_copy_file($alt_cn,$alt_cn_copy);
 		#Second distance
-		my $sec_dist = File::Spec->catfile($tmp,sprintf($SECOND_DISTANCE_PNG,$options->{'tumour_name'}));
-		my $sec_dist_copy = File::Spec->catfile($outdir,sprintf($SECOND_DISTANCE_PNG,$options->{'tumour_name'}));
+		my $sec_dist = File::Spec->catfile($tmp,sprintf($SECOND_DISTANCE_PNG,$tumour_name));
+		my $sec_dist_copy = File::Spec->catfile($outdir,sprintf($SECOND_DISTANCE_PNG,$tumour_name));
 		_copy_file($sec_dist,$sec_dist_copy);
 		#Rho psi txt
-		my $rho_psi = File::Spec->catfile($tmp,sprintf($RHO_PSI_FILE,$options->{'tumour_name'}));
-		my $rho_psi_copy = File::Spec->catfile($outdir,sprintf($RHO_PSI_FILE,$options->{'tumour_name'}));
+		my $rho_psi = File::Spec->catfile($tmp,sprintf($RHO_PSI_FILE,$tumour_name));
+		my $rho_psi_copy = File::Spec->catfile($outdir,sprintf($RHO_PSI_FILE,$tumour_name));
 		_copy_file($rho_psi,$rho_psi_copy);
 		#normal contamination txt
-		my $norm_cont = File::Spec->catfile($tmp,sprintf($NORMAL_CONTAMINATION_FILE,$options->{'tumour_name'}));
-		my $norm_cont_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CONTAMINATION_FILE,$options->{'tumour_name'}));
+		my $norm_cont = File::Spec->catfile($tmp,sprintf($NORMAL_CONTAMINATION_FILE,$tumour_name));
+		my $norm_cont_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CONTAMINATION_FILE,$tumour_name));
 		_copy_file($norm_cont,$norm_cont_copy);
 		#subclones txt
-		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
-		my $subcl_txt_copy = File::Spec->catfile($outdir,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$tumour_name));
+		my $subcl_txt_copy = File::Spec->catfile($outdir,sprintf($SUBCLONES_TXT,$tumour_name));
 		_copy_file($subcl_txt,$subcl_txt_copy);
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
 	}
@@ -706,12 +746,19 @@ sub _run_copy_number_to_vcf{
 	$command .= " -o $cn_file";
   $command .= " -r $options->{reference}";
   $command .= " -i $subcl_txt";
-  $command .= " -sbm $options->{tumbam}";
-  $command .= " -sbw $options->{normbam}";
   $command .= " -ra $options->{assembly}";
   $command .= " -rs $options->{species}";
   $command .= " -msq $options->{protocol} -wsq $options->{protocol}";
   $command .= " -msp $options->{platform} -wsp $options->{platform}";
+  if(defined $options->{'allele-counts'}) {
+    # these are sample names when allele-count is in effect
+    $command .= " -msn $options->{tumbam}";
+    $command .= " -wsn $options->{normbam}";
+  }
+  else {
+    $command .= " -sbm $options->{tumbam}";
+    $command .= " -sbw $options->{normbam}";
+  }
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
   return;

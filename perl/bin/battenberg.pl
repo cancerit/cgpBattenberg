@@ -128,8 +128,8 @@ sub setup {
   				'h|help' => \$opts{'h'},
 					'm|man' => \$opts{'m'},
 					'o|outdir=s' => \$opts{'outdir'},
-					'tb|tumour-bam=s' => \$opts{'tumbam'},
-					'nb|normal-bam=s' => \$opts{'normbam'},
+					'tb|tumbam=s' => \$opts{'tumbam'},
+					'nb|normbam=s' => \$opts{'normbam'},
 					't|threads=i' => \$opts{'threads'},
 					'i|index=i' => \$opts{'index'},
 					'p|process=s' => \$opts{'process'},
@@ -156,6 +156,7 @@ sub setup {
           'ra|assembly=s' => \$opts{'assembly'},
           'pr|protocol=s' => \$opts{'protocol'},
           'pl|platform=s' => \$opts{'platform'},
+          'a|allele-counts=s' => \$opts{'allele-counts'},
           'j|jobs' => \$opts{'jobs'},
 		) or pod2usage(2);
 
@@ -168,13 +169,23 @@ sub setup {
 
 	pod2usage(-msg  => "\nERROR: Options must be defined.\n", -verbose => 2,  -output => \*STDERR) unless($defined);
 
-  PCAP::Cli::file_for_reading('tumour-bam',$opts{'tumbam'});
-  PCAP::Cli::file_for_reading('normal-bam',$opts{'normbam'});
-  #We should also check the bam indexes exist.
-  my $tumidx = $opts{'tumbam'}.".bai";
-  my $normidx = $opts{'normbam'}.".bai";
-  PCAP::Cli::file_for_reading('tumour-bai',$tumidx);
-  PCAP::Cli::file_for_reading('normal-bai',$normidx);
+
+  if(defined $opts{'allele-counts'}) {
+    for my $bam_opt((qw(tumbam normbam))) {
+      if(!exists $opts{$bam_opt} || !defined $opts{$bam_opt} || $opts{$bam_opt} =~ m/[.]bam$/) {
+        pod2usage(-msg  => "\nERROR: When '-a' defined $bam_opt should be sample name.\n", -verbose => 1,  -output => \*STDERR);
+      }
+    }
+  }
+  else {
+    delete $opts{'allele-counts'};
+    PCAP::Cli::file_for_reading('tumbam',$opts{'tumbam'});
+    PCAP::Cli::file_for_reading('normbam',$opts{'normbam'});
+    #We should also check the bam indexes exist.
+    PCAP::Cli::file_for_reading('tumour-bai',$opts{'tumbam'}.'.bai');
+    PCAP::Cli::file_for_reading('normal-bai',$opts{'normbam'}.'.bai');
+  }
+
   PCAP::Cli::file_for_reading('impute_info.txt',$opts{'impute_info'});
   PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
 
@@ -273,7 +284,6 @@ sub setup {
 
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
-
 	return \%opts;
 }
 
@@ -291,8 +301,10 @@ battenberg.pl [options]
   Required parameters:
     -outdir                -o   Folder to output result to.
     -reference             -r   Path to reference genome index file *.fai
-    -tumour-bam            -tb  Path to tumour bam file
-    -normal-bam            -nb  Path to normal bam file
+    -tumbam                -tb  Path to tumour bam file
+                                 - when '-a' defined sample name
+    -normbam               -nb  Path to normal bam file
+                                 - when '-a' defined sample name
     -is-male               -s   Flag, if the sample is male
     -impute-info           -e   Location of the impute info file
     -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
@@ -301,6 +313,7 @@ battenberg.pl [options]
                                 - specifically male sex chromosome, mitochondria and non primary contigs
 
    Optional parameters:
+    -allele-counts         -a   Provide a tar.gz containing the impute allele counts
     -min-bq-allcount       -q   Minimum base quality to permit allele counting [20]
     -segmentation-gamma    -sg  Segmentation gamma [10]
     -phasing-gamma         -pg  Phasing gamma [1]
@@ -341,40 +354,40 @@ should the process fail B<only delete this if> you are unable to resume the proc
 
 Final output files are:
 
-<tumour_sample>_copynumberprofile.png
-<tumour_sample>_hetdata.tar.gz
-<tumour_sample>_rafseg.tar.gz
-<tumour_sample>_second_nonroundedprofile.png
-<normal_sample>_allelecounts.tar.gz
-<tumour_sample>_allelecounts.tar.gz
-<tumour_sample>_distance.png
-<tumour_sample>_impute_input.tar.gz
-<tumour_sample>_nonroundedprofile.png
-<tumour_sample>_rho_and_psi.txt
-<tumour_sample>_subclones.tar.gz
-<tumour_sample>_battenberg_cn.vcf.gz
-<tumour_sample>_battenberg_cn.vcf.gz.tbi
-<tumour_sample>_Germline<tumour_sample>.png
-<tumour_sample>_impute_output.tar.gz
-<tumour_sample>_normal_contamination.txt
-<tumour_sample>_second_copynumberprofile.png
-<tumour_sample>_subclones.txt
-<tumour_sample>_hetbaf.tar.gz
-<tumour_sample>_logR_Baf_segmented.vcf.gz
-<tumour_sample>_logR_Baf_segmented.vcf.gz.tbi
-<tumour_sample>_other.tar.gz
-<tumour_sample>_second_distance.png
-<tumour_sample>_Tumor<tumour_sample>.png
+ <tumour_sample>_copynumberprofile.png
+ <tumour_sample>_hetdata.tar.gz
+ <tumour_sample>_rafseg.tar.gz
+ <tumour_sample>_second_nonroundedprofile.png
+ <normal_sample>_allelecounts.tar.gz
+ <tumour_sample>_allelecounts.tar.gz
+ <tumour_sample>_distance.png
+ <tumour_sample>_impute_input.tar.gz
+ <tumour_sample>_nonroundedprofile.png
+ <tumour_sample>_rho_and_psi.txt
+ <tumour_sample>_subclones.tar.gz
+ <tumour_sample>_battenberg_cn.vcf.gz
+ <tumour_sample>_battenberg_cn.vcf.gz.tbi
+ <tumour_sample>_Germline<tumour_sample>.png
+ <tumour_sample>_impute_output.tar.gz
+ <tumour_sample>_normal_contamination.txt
+ <tumour_sample>_second_copynumberprofile.png
+ <tumour_sample>_subclones.txt
+ <tumour_sample>_hetbaf.tar.gz
+ <tumour_sample>_logR_Baf_segmented.vcf.gz
+ <tumour_sample>_logR_Baf_segmented.vcf.gz.tbi
+ <tumour_sample>_other.tar.gz
+ <tumour_sample>_second_distance.png
+ <tumour_sample>_Tumor<tumour_sample>.png
 
 =item B<-reference>
 
 Path to genome.fa.fai file and the assumed location of its associated .fa file.
 
-=item B<-tumour-bam>
+=item B<-tumbam>
 
 Path to mapped, indexed, duplicate marked/removed tumour bam file.
 
-=item B<-normal-bam>
+=item B<-normbam>
 
 Path to mapped, indexed, duplicate marked/removed normal bam file.
 
