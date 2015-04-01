@@ -1658,7 +1658,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
       dev.off()
     }
   }
-  output_optimum_pair = list(psi = psi, rho = rho)
+  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy_opt1)
   return( output_optimum_pair ) # kjd 20-2-2014
 }
 
