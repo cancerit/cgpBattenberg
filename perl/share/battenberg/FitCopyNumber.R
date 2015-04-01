@@ -140,6 +140,6 @@ write.table(rho_psi_output,paste(start.file,"rho_and_psi.txt",sep=""),quote=F,se
 
 # Create user friendly cellularity and ploidy output file
 cellularity_ploidy_output = data.frame(cellularity = c(ascat_optimum_pair_fraction_of_genome$rho), ploidy = c(ascat_optimum_pair_fraction_of_genome$ploidy), psi = c(ascat_optimum_pair_fraction_of_genome$psi))
-write.table(cellularity_ploidy_output, paste(outputfile.prefix,"cellularity_ploidy.txt",sep=""), quote=F, sep="\t", row.names=F)
+write.table(cellularity_ploidy_output, paste(start.file,"cellularity_ploidy.txt",sep=""), quote=F, sep="\t", row.names=F)
 
 q(save="no")
