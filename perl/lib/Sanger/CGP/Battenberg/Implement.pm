@@ -100,6 +100,7 @@ const my $SECOND_DISTANCE_PNG => q{%s_second_distance.png};
 const my $BAF_SEGMENT_TXT => q{%s.BAFsegmented.txt};
 const my $LOGR_SEGMENT_TXT => q{%s.logRsegmented.txt};
 const my $SUBCLONES_TXT => q{%s_subclones.txt};
+const my $CELLULARITY_PLOIDY_TXT => q{%s_cellularity_ploidy.txt};
 const my $SEGMENT_VCF => q{%s_logR_Baf_segmented.vcf};
 const my $SEGMENT_VCF_GZ => q{%s_logR_Baf_segmented.vcf.gz};
 const my $SEGMENT_VCF_TABIX => q{%s_logR_Baf_segmented.vcf.gz.tbi};
@@ -492,11 +493,12 @@ sub battenberg_callsubclones{
 sub battenberg_finalise{
 	# uncoverable subroutine
 	my $options = shift;
-	my $outdir = $options->{'outdir'};
   my $tmp = $options->{'tmp'};
 
   return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 
+ 	my $outdir = $options->{'outdir'};
+  my $tumour_name = $options->{'tumour_name'};
 	my ($rho,$psi) = _extractRhoPsiFromFile($options);
 
 	#Calculate normal contamination
@@ -640,12 +642,8 @@ sub battenberg_finalise{
 		#Now tar gz and tabix
 		_bgzip_tabix_vcf($options,$vcf_seg_out);
 		#Move tar.gz and tabix to results folder.
-		my $gz_file = File::Spec->catfile($tmp,sprintf($SEGMENT_VCF_GZ,$options->{'tumour_name'}));
-		my $gz_file_copy = File::Spec->catfile($outdir,sprintf($SEGMENT_VCF_GZ,$options->{'tumour_name'}));
-		my $tabix_file = File::Spec->catfile($tmp,sprintf($SEGMENT_VCF_TABIX,$options->{'tumour_name'}));
-		my $tabix_file_copy = File::Spec->catfile($outdir,sprintf($SEGMENT_VCF_TABIX,$options->{'tumour_name'}));
-		_copy_file($gz_file,$gz_file_copy);
-		_copy_file($tabix_file,$tabix_file_copy);
+		tmp_to_outdir($tmp, $outdir, $tumour_name,
+  	              $SEGMENT_VCF_GZ, $SEGMENT_VCF_TABIX);
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['create_seg_vcf',0]});
 	}
 
@@ -658,26 +656,16 @@ sub battenberg_finalise{
 		#gz and tabix cn vcf
 		_bgzip_tabix_vcf($options,$cn_file);
 		#copy gz and tabix to results
-		my $gz_file = File::Spec->catfile($tmp,sprintf($CN_VCF_GZ,$options->{'tumour_name'}));
-		my $gz_file_copy = File::Spec->catfile($outdir,sprintf($CN_VCF_GZ,$options->{'tumour_name'}));
-		my $tabix_file = File::Spec->catfile($tmp,sprintf($CN_VCF_TABIX,$options->{'tumour_name'}));
-		my $tabix_file_copy = File::Spec->catfile($outdir,sprintf($CN_VCF_TABIX,$options->{'tumour_name'}));
-		_copy_file($gz_file,$gz_file_copy);
-		_copy_file($tabix_file,$tabix_file_copy);
+		tmp_to_outdir($tmp, $outdir, $tumour_name,
+		              $CN_VCF_GZ, $CN_VCF_TABIX);
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['create_cn_vcf',0]});
 	}
 
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]}) == 0){
 		#Now copy (and tar gz) some per run files.
-		#Sunrise plot
-
-    my $tumour_name = $options->{'tumour_name'};
 		my $tumour_dot = $tumour_name;
 		$tumour_dot =~ s/[-]/./g;
 
-		my $sunrise = File::Spec->catfile($tmp,sprintf($SUNRISE_PNG,$tumour_name));
-		my $sunrise_copy = File::Spec->catfile($outdir,sprintf($SUNRISE_PNG,$tumour_name));
-		_copy_file($sunrise,$sunrise_copy);
 		#Tumour png
 		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name,$tumour_dot));
 		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_CORRECTED_PNG,$tumour_name));
@@ -686,38 +674,12 @@ sub battenberg_finalise{
 		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$tumour_name,$tumour_dot));
 		my $normal_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CORRECTED_PNG,$tumour_name));
 		_copy_file($normal,$normal_copy);
-		#Copy no
-		my $copyno = File::Spec->catfile($tmp,sprintf($COPY_NO_PNG,$tumour_name));
-		my $copyno_copy = File::Spec->catfile($outdir,sprintf($COPY_NO_PNG,$tumour_name));
-		_copy_file($copyno,$copyno_copy);
-		#Non rounded copy number
-		my $nonrounded = File::Spec->catfile($tmp,sprintf($NON_ROUNDED_PNG,$tumour_name));
-		my $nonrounded_copy = File::Spec->catfile($outdir,sprintf($NON_ROUNDED_PNG,$tumour_name));
-		_copy_file($nonrounded,$nonrounded_copy);
-		#alt_non_rounded copy number
-		my $alt_non_rounded = File::Spec->catfile($tmp,sprintf($ALT_COPY_NO_ROUNDED_PNG,$tumour_name));
-		my $alt_non_rounded_copy = File::Spec->catfile($outdir,sprintf($ALT_COPY_NO_ROUNDED_PNG,$tumour_name));
-		_copy_file($alt_non_rounded,$alt_non_rounded_copy);
-		#Alt cn
-		my $alt_cn = File::Spec->catfile($tmp,sprintf($ALT_NON_ROUNDED_PNG,$tumour_name));
-		my $alt_cn_copy = File::Spec->catfile($outdir,sprintf($ALT_NON_ROUNDED_PNG,$tumour_name));
-		_copy_file($alt_cn,$alt_cn_copy);
-		#Second distance
-		my $sec_dist = File::Spec->catfile($tmp,sprintf($SECOND_DISTANCE_PNG,$tumour_name));
-		my $sec_dist_copy = File::Spec->catfile($outdir,sprintf($SECOND_DISTANCE_PNG,$tumour_name));
-		_copy_file($sec_dist,$sec_dist_copy);
-		#Rho psi txt
-		my $rho_psi = File::Spec->catfile($tmp,sprintf($RHO_PSI_FILE,$tumour_name));
-		my $rho_psi_copy = File::Spec->catfile($outdir,sprintf($RHO_PSI_FILE,$tumour_name));
-		_copy_file($rho_psi,$rho_psi_copy);
-		#normal contamination txt
-		my $norm_cont = File::Spec->catfile($tmp,sprintf($NORMAL_CONTAMINATION_FILE,$tumour_name));
-		my $norm_cont_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CONTAMINATION_FILE,$tumour_name));
-		_copy_file($norm_cont,$norm_cont_copy);
-		#subclones txt
-		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$tumour_name));
-		my $subcl_txt_copy = File::Spec->catfile($outdir,sprintf($SUBCLONES_TXT,$tumour_name));
-		_copy_file($subcl_txt,$subcl_txt_copy);
+
+    tmp_to_outdir($tmp, $outdir, $tumour_name,
+                  $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
+                  $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $RHO_PSI_FILE,
+                  $NORMAL_CONTAMINATION_FILE, $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT);
+
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
 	}
 	#Lastly move the logs file
@@ -727,6 +689,15 @@ sub battenberg_finalise{
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['move_log_dir',0]});
 	}
   return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'),0);
+}
+
+sub tmp_to_outdir {
+  my ($tmp, $outdir, $tumour_name, @formats) = @_;
+  for my $format(@formats) {
+    my $from = File::Spec->catfile($tmp,sprintf($format,$tumour_name));
+    my $to = File::Spec->catfile($outdir,sprintf($format,$tumour_name));
+    _copy_file($from,$to);
+  }
 }
 
 sub battenberg_cleanup{
