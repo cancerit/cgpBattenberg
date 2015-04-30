@@ -66,7 +66,7 @@ if(nrow(impute.info)>1){
 #filter out bad SNPs (streaks in BAF)
 if((problemLociFile !="NA") & (!is.na(problemLociFile)))
 {
-	problemSNPs=read.table(problemLociFile,header=T,sep="\t")
+	problemSNPs=read.table(gzfile(problemLociFile),header=T,sep="\t")
 	problemSNPs=problemSNPs$Pos[problemSNPs$Chr==chr_names[chr]]
 	badIndices=match(known_SNPs[,2],problemSNPs)
 	known_SNPs = known_SNPs[is.na(badIndices),]
