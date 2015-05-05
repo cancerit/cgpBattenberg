@@ -1892,7 +1892,7 @@ run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, s
 # 7. SNPpos: position of all SNPs
 # 8. ch: a list containing vectors with the indices for each chromosome (e.g. Tumor_LogR[ch[[13]],] will output the Tumor_LogR data of chromosome 13
 # 9. chr: a list containing vectors with the indices for each distinct part that can be segmented separately (e.g. chromosome arm, stretch of DNA between gaps in the array design)
-ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = NULL, Germline_BAF_file = NULL, chrs = c(1:22,"X"), Tumor_counts_file = NULL, Germline_counts_file = NULL) {
+ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, samplenames, Germline_LogR_file = NULL, Germline_BAF_file = NULL, chrs = c(1:22,"X"), Tumor_counts_file = NULL, Germline_counts_file = NULL) {
 
   Tumor_counts = NULL
   Germline_counts = NULL
@@ -1900,8 +1900,10 @@ ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = 
   # read in SNP array data files
   print.noquote("Reading Tumor LogR data...")
   Tumor_LogR <- read.table(Tumor_LogR_file, header=T, row.names=1, comment.char="", sep = "\t")
+  colnames(Tumor_LogR)[3:ncol(Tumor_LogR)] = samplenames
   print.noquote("Reading Tumor BAF data...")
   Tumor_BAF <- read.table(Tumor_BAF_file, header=T, row.names=1, comment.char="", sep = "\t")
+  colnames(Tumor_BAF)[3:ncol(Tumor_BAF)] = samplenames
   if(!is.null(Tumor_counts_file)){
 	  Tumor_counts <- read.table(Tumor_counts_file, header=T, row.names=1, comment.char="", sep = "\t")
   }
@@ -1911,8 +1913,10 @@ ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = 
   if(!is.null(Germline_LogR_file)) {
     print.noquote("Reading Germline LogR data...")
     Germline_LogR <- read.table(Germline_LogR_file, header=T, row.names=1, comment.char="", sep = "\t")
+    colnames(Germline_LogR)[3:ncol(Germline_LogR)] = samplenames
     print.noquote("Reading Germline BAF data...")
     Germline_BAF <- read.table(Germline_BAF_file, header=T, row.names=1, comment.char="", sep = "\t")
+    colnames(Germline_BAF)[3:ncol(Germline_BAF)] = samplenames
 	if(!is.null(Germline_counts_file)){
 		  Germline_counts <- read.table(Germline_counts_file, header=T, row.names=1, comment.char="", sep = "\t")
 	}
