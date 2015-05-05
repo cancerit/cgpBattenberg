@@ -182,7 +182,7 @@ sub setup {
     PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
   }
   else {
-    $opts{'prob_loci'} = get_mod_path().'/probloci.txt.gz';
+    $opts{'prob_loci'} = Sanger::CGP::Battenberg::Implement::get_mod_path().'/probloci.txt.gz';
   }
 
 	@{$opts{'ignored_contigs'}} = ();

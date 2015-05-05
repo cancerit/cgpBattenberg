@@ -136,7 +136,7 @@ sub prepare {
   $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}))[0];
   $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}))[0];
 	$options->{'mod_path'} = get_mod_path();
-	$options->{'bat_path'} = File::Spec->catdir($mod_path, 'battenberg');
+	$options->{'bat_path'} = File::Spec->catdir($options->{'mod_path'}, 'battenberg');
 	$options->{'tmp'} = File::Spec->rel2abs($options->{'tmp'});
   return 1;
 }

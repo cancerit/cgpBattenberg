@@ -21,6 +21,7 @@ share/battenberg/GetBAFLogR.R
 share/battenberg/GetHaplotypedBAFs.R
 share/battenberg/orderEdges.R
 share/battenberg/PlotHaplotypedData.R
+share/battenberg/probloci.txt.gz
 share/battenberg/RunBAFLogR.R
 share/battenberg/RunGetHaplotypedBAFs.R
 share/battenberg/RunImpute.R
