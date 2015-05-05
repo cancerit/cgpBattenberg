@@ -176,7 +176,14 @@ sub setup {
   PCAP::Cli::file_for_reading('tumour-bai',$tumidx);
   PCAP::Cli::file_for_reading('normal-bai',$normidx);
   PCAP::Cli::file_for_reading('impute_info.txt',$opts{'impute_info'});
-  PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
+
+
+  if(defined $opts{'prob_loci'}) {
+    PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
+  }
+  else {
+    $opts{'prob_loci'} = get_mod_path().'/probloci.txt.gz';
+  }
 
 	@{$opts{'ignored_contigs'}} = ();
 	if(exists ($opts{'ignore_file'}) && defined($opts{'ignore_file'})){
@@ -296,11 +303,11 @@ battenberg.pl [options]
     -is-male               -s   Flag, if the sample is male
     -impute-info           -e   Location of the impute info file
     -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
-    -prob-loci             -c   Location of prob_loci.txt file
     -ignore-contigs-file   -ig  File containing contigs to ignore
                                 - specifically male sex chromosome, mitochondria and non primary contigs
 
    Optional parameters:
+    -prob-loci             -c   Location of prob_loci.txt file [included in release]
     -min-bq-allcount       -q   Minimum base quality to permit allele counting [20]
     -segmentation-gamma    -sg  Segmentation gamma [10]
     -phasing-gamma         -pg  Phasing gamma [1]

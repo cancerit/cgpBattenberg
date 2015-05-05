@@ -123,15 +123,19 @@ const my @BATTENBERG_RESULT_FILES => qw(
 																					%s.logRsegmented.txt
 																				);
 
+sub get_mod_path {
+  my $mod_path = dirname(abs_path($0)).'/../share';
+  $mod_path = module_dir('Sanger::CGP::Battenberg::Implement') unless(-e File::Spec->catdir($mod_path, 'battenberg'));
+  return $mod_path;
+}
+
 sub prepare {
   my $options = shift;
   $options->{'tumbam'} = File::Spec->rel2abs($options->{'tumbam'});
 	$options->{'normbam'} = File::Spec->rel2abs($options->{'normbam'});
   $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}))[0];
   $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}))[0];
-  my $mod_path = dirname(abs_path($0)).'/../share';
-  $mod_path = module_dir('Sanger::CGP::Battenberg::Implement') unless(-e File::Spec->catdir($mod_path, 'battenberg'));
-	$options->{'mod_path'} = $mod_path;
+	$options->{'mod_path'} = get_mod_path();
 	$options->{'bat_path'} = File::Spec->catdir($mod_path, 'battenberg');
 	$options->{'tmp'} = File::Spec->rel2abs($options->{'tmp'});
   return 1;
