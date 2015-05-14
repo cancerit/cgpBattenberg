@@ -116,7 +116,7 @@ for(ch in 1:length(chr.names)){
 }
 
 if(use_preset_rho_psi){
-	ascat_optimum_pair = list(rho=preset_rho, psi = preset_psi)
+	ascat_optimum_pair = list(rho=preset_rho, psi = preset_psi, ploidy = preset_psi)
 }else{
 	distance.outfile=paste(start.file,"distance.png",sep="",collapse="") # kjd 20-2-2014
 	copynumberprofile.outfile=paste(start.file,"copynumberprofile.png",sep="",collapse="") # kjd 20-2-2014
