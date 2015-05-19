@@ -1460,7 +1460,6 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
         # ploidy is recalculated based on results, to avoid bias (due to differences in normalization of LogR)
         ploidy = sum((nA+nB) * s[,"length"]) / sum(s[,"length"]);
-	ploidy_opt1 = ploidy
 
         percentzero = (sum((round(nA)==0)*s[,"length"])+sum((round(nB)==0)*s[,"length"]))/sum(s[,"length"])
         perczeroAbb = (sum((round(nA)==0)*s[,"length"]*ifelse(s[,"b"]==0.5,0,1))+sum((round(nB)==0)*s[,"length"]*ifelse(s[,"b"]==0.5,0,1)))/sum(s[,"length"]*ifelse(s[,"b"]==0.5,0,1))
@@ -1567,6 +1566,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1632,6 +1632,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1659,7 +1660,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
       dev.off()
     }
   }
-  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy_opt1)
+  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy)
   return( output_optimum_pair ) # kjd 20-2-2014
 }
 
