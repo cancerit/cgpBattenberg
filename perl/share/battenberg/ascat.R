@@ -1566,6 +1566,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1631,6 +1632,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1658,7 +1660,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
       dev.off()
     }
   }
-  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy_opt1)
+  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy)
   return( output_optimum_pair ) # kjd 20-2-2014
 }
 
