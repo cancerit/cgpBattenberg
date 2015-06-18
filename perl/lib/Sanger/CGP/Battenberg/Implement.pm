@@ -631,7 +631,9 @@ sub battenberg_finalise{
 		for(my $i=1; $i<=$options->{'job_count'}; $i++){
 			my $file = File::Spec->catfile($tmp,sprintf($IMPUTE_INPUT,$options->{'tumour_name'},$i));
 			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
-			unlink glob $file;
+	                foreach my $file_to_del (glob $file){
+	                       unlink($file_to_del) or print "Could not unlink $file_to_del";
+	                }
 		}
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['cleanup_impute',0]});
 	}
@@ -673,11 +675,15 @@ sub battenberg_finalise{
 		#Tumour png
 		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name,$tumour_dot));
 		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_CORRECTED_PNG,$tumour_name));
-		_copy_file($tumour,$tumour_copy);
+                if (-e $tumor) {
+                       _copy_file($tumour,$tumour_copy);
+                }
 		#Normal png
 		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$tumour_name,$tumour_dot));
 		my $normal_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CORRECTED_PNG,$tumour_name));
-		_copy_file($normal,$normal_copy);
+                if (-e $normal) {
+                        _copy_file($normal,$normal_copy);
+                }
 
     tmp_to_outdir($tmp, $outdir, $tumour_name,
                   $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
@@ -839,7 +845,7 @@ sub _zip_and_tar_fileset{
 	die("Error: Failed to copy file $tarball to $copied_loc.") if(!copy($tarball,$copied_loc));
 	push(@files,$tarball);
 	foreach my $file_to_del (@files){
-		unlink($file_to_del);
+		unlink($file_to_del) or print "Could not unlink $file_to_del";
 	}
 	return;
 }
