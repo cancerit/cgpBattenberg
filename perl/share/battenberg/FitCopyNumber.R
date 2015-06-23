@@ -60,14 +60,6 @@ raw.logR.data = read.table(paste(start.file,"mutantLogR.tab",sep=""),sep="\t",he
 raw.BAF.data = raw.BAF.data[!is.na(raw.BAF.data[,3]),]
 raw.logR.data = raw.logR.data[!is.na(raw.logR.data[,3]),]
 
-#chromosome names are sometimes 'chr1', etc.
-if(length(grep("chr",raw.BAF.data[1,1]))>0){
-	raw.BAF.data[,1] = gsub("chr","",raw.BAF.data[,1])
-}
-if(length(grep("chr",raw.logR.data[1,1]))>0){
-	raw.logR.data[,1] = gsub("chr","",raw.logR.data[,1])
-}
-
 BAF.data = NULL
 logR.data = NULL
 segmented.logR.data = NULL
