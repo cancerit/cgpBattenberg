@@ -297,7 +297,7 @@ sub unpack_file{
 
 sub download_file{
 	my ($url,$file,$use_curl) = @_;
-        if $use_curl {
+        if ($use_curl) {
           my $output = `curl --location $url > $file`;
         } else {
           my $dirname  = dirname($file);
