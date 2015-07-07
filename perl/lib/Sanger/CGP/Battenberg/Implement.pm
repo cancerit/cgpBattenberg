@@ -675,7 +675,7 @@ sub battenberg_finalise{
 		#Tumour png
 		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name,$tumour_dot));
 		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_CORRECTED_PNG,$tumour_name));
-                if (-e $tumor) {
+                if (-e $tumour) {
                        _copy_file($tumour,$tumour_copy);
                 }
 		#Normal png
