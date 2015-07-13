@@ -81,6 +81,7 @@ for(chr in chr.names){
 	indices = match(chr.segmented.BAF.data[,2],chr.logR.data$Position)
 	logR.data = rbind(logR.data, chr.logR.data[indices[!is.na(indices)],])
 	chr.segmented.logR.data = chr.logR.data[indices[!is.na(indices)],]
+	if(length(chr.segmented.BAF.data[,5])==0){next}
 	segs = make_seg_lr(chr.segmented.BAF.data[,5])
 	cum.segs = c(0,cumsum(segs))
 	for(s in 1:length(segs)){

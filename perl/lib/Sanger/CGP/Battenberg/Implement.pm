@@ -835,8 +835,10 @@ sub _zip_and_tar_fileset{
 			$file = File::Spec->catfile($location,sprintf($filepattern,$sample_name,$i+1));
 			next if($options->{'is_male'} && $file =~ m/chr(X|23)/ && ! -e $file); #Skip if male and X results aren't present, this is allowed...
 		}
-		PCAP::Cli::file_for_reading('file for tar.gz',$file);
-		push(@files,$file);
+		if (-e $file) {
+		  PCAP::Cli::file_for_reading('file for tar.gz',$file);
+		  push(@files,$file);
+		}
 	}
 
 	my $tarball = _targzFileSet($options,\@files,$tar,$dir);
@@ -933,6 +935,7 @@ sub read_contigs_from_file_with_ignore{
     		my $line = $_;
     		chomp($line);
     		my ($con,undef) = split(/\s+/,$line);
+    		$con =~ s/chr//;  # handle hg19, removing chr prefix
     		my $match=0;
     		foreach my $ign(@$ignore_contigs){
     			if("$ign" eq "$con"){
