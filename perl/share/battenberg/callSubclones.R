@@ -264,7 +264,8 @@ for (chr in chr_names) {
   LogRchr = LogRvals[LogRvals[,1]==chr,3]
   LogRposke = LogRvals[LogRvals[,1]==chr,2]
 
-  png(filename = paste(start.file,"_subclones_chr",chr,".png",sep=""), width = 2000, height = 2000, res = 200)
+  png(filename = paste(start.file,"_subclones_",ifelse(grepl("chr", chr), "", "chr"),
+                       chr,".png",sep=""), width = 2000, height = 2000, res = 200)
   par(mar = c(2.5,2.5,2.5,0.25), cex = 0.4, cex.main=1.5, cex.axis = 1, cex.lab = 1, mfrow = c(2,1))
   plot(c(min(pos)/1000000,max(pos)/1000000),c(-1,1),pch=".",type = "n",
        main = paste(sample.name,", chromosome ", chr, sep=""), xlab = "Position (Mb)", ylab = "LogR")
