@@ -164,7 +164,7 @@ for (i in 1:length(BAFlevels)) {
   whichclosestlevel.test = which.min(abs(test.levels-l))
 
   #270713 - problem caused by segments with constant BAF (usually 1 or 2)
-  if(sd(BAFke)==0){
+  if(is.na(sd(BAFke)) || sd(BAFke)==0){
 	  pval[i]=0
   }else{
   	#pval[i] = t.test(BAFke,alternative="two.sided",mu=levels[whichclosestlevel])$p.value
