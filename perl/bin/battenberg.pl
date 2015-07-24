@@ -80,7 +80,7 @@ my %index_max = ( 'allelecount' => -1,
 	Sanger::CGP::Battenberg::Implement::prepare($options);
 
 	my $threads = PCAP::Threaded->new($options->{'threads'});
-	&PCAP::Threaded::disable_out_err unless(exists $options->{'index'});
+	&PCAP::Threaded::disable_out_err if(!exists $options->{'index'} && $options->{'threads'} == 1);
 
 	# register multi  processes
 	$threads->add_function('battenberg_allelecount', \&Sanger::CGP::Battenberg::Implement::battenberg_allelecount);

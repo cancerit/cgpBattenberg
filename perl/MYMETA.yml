@@ -20,4 +20,4 @@ no_index:
 requires:
   Const::Fast: '0.014'
   Try::Tiny: '0.22'
-version: v1.3.2
+version: v1.3.3
