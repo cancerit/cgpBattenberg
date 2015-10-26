@@ -41,6 +41,7 @@ GetChromosomeBAFs<-function(chr, SNP_file, startHaplotypeFile,endHaplotypeFile, 
 	het_variant_data=het_variant_data[!is.na(indices),]
 	snp_indices<-indices[!is.na(indices)]
 	filtered_snp_data = snp_data[snp_indices,]
+	# If there are no heterozygous SNPs, write out an empty file with just the header
 	if(nrow(het_variant_data)==0){
 		write.table(array(NA,c(0,3)),outfile,sep="\t",col.names=c("Chromosome","Position",samplename),quote=F)
 		return()
@@ -49,16 +50,20 @@ GetChromosomeBAFs<-function(chr, SNP_file, startHaplotypeFile,endHaplotypeFile, 
 	ref_indices=match(het_variant_data[cbind(1:nrow(het_variant_data),4+het_variant_data[,6])],nucleotides)
 	alt_indices=match(het_variant_data[cbind(1:nrow(het_variant_data),4+het_variant_data[,7])],nucleotides)
 
-	print(filtered_snp_data[1:3,])
-
 	min_indices=NA
 	ref.count = as.numeric(filtered_snp_data[cbind(1:nrow(filtered_snp_data),alt_indices+2)])
 	alt.count = as.numeric(filtered_snp_data[cbind(1:nrow(filtered_snp_data),ref_indices+2)])
 	denom<- ref.count + alt.count
 
 	min_indices<-denom>=minCounts
-
 	filtered_snp_data=filtered_snp_data[min_indices,]
+
+	# If there are no heterozygous SNPs with enough coverage, write out an empty file with just the header
+	if (nrow(filtered_snp_data)==0) {
+		write.table(array(NA,c(0,3)),outfile,sep="\t",col.names=c("Chromosome","Position",samplename),quote=F)
+		return()
+	}
+
 	denom = denom[min_indices]
 	alt.count = alt.count[min_indices]
 

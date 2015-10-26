@@ -100,7 +100,7 @@ fi
 
 ## grab cpanm:
 
-curl -LO http://xrl.us/cpanm
+curl -sSLO http://xrl.us/cpanm
 mv cpanm $INIT_DIR/perl/bin/.
 chmod +x $INIT_DIR/perl/bin/cpanm
 

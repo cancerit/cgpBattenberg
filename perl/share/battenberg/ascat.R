@@ -1566,6 +1566,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1631,6 +1632,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 
     rho = rho_opt1
     psi = psi_opt1
+    ploidy = ploidy_opt1
 
     nAfull = (rho-1-(b-1)*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
     nBfull = (rho-1+b*2^(r/gamma)*((1-rho)*2+rho*psi))/rho
@@ -1658,7 +1660,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
       dev.off()
     }
   }
-  output_optimum_pair = list(psi = psi, rho = rho)
+  output_optimum_pair = list(psi = psi, rho = rho, ploidy = ploidy)
   return( output_optimum_pair ) # kjd 20-2-2014
 }
 
@@ -1874,8 +1876,8 @@ run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, s
       dev.off()
     }
   }
-  output_optimum_pair = list(psi = psi_opt1, rho = rho_opt1)
-  output_optimum_pair_without_ref = list(psi = psi_without_ref, rho = rho_without_ref)
+  output_optimum_pair = list(psi = psi_opt1, rho = rho_opt1, ploidy = ploidy_opt1)
+  output_optimum_pair_without_ref = list(psi = psi_without_ref, rho = rho_without_ref, ploidy = ploidy_without_ref)
   return(list(output_optimum_pair=output_optimum_pair, output_optimum_pair_without_ref=output_optimum_pair_without_ref, distance = distance.from.ref.seg, distance_without_ref = best.distance, minimise = minimise, is.ref.better = is.ref.better)) # kjd 20-2-2014, adapted by DCW 140314
 }
 
@@ -1892,7 +1894,7 @@ run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, s
 # 7. SNPpos: position of all SNPs
 # 8. ch: a list containing vectors with the indices for each chromosome (e.g. Tumor_LogR[ch[[13]],] will output the Tumor_LogR data of chromosome 13
 # 9. chr: a list containing vectors with the indices for each distinct part that can be segmented separately (e.g. chromosome arm, stretch of DNA between gaps in the array design)
-ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = NULL, Germline_BAF_file = NULL, chrs = c(1:22,"X"), Tumor_counts_file = NULL, Germline_counts_file = NULL) {
+ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, samplenames, Germline_LogR_file = NULL, Germline_BAF_file = NULL, chrs = c(1:22,"X"), Tumor_counts_file = NULL, Germline_counts_file = NULL) {
 
   Tumor_counts = NULL
   Germline_counts = NULL
@@ -1900,8 +1902,10 @@ ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = 
   # read in SNP array data files
   print.noquote("Reading Tumor LogR data...")
   Tumor_LogR <- read.table(Tumor_LogR_file, header=T, row.names=1, comment.char="", sep = "\t")
+  colnames(Tumor_LogR)[3:ncol(Tumor_LogR)] = samplenames
   print.noquote("Reading Tumor BAF data...")
   Tumor_BAF <- read.table(Tumor_BAF_file, header=T, row.names=1, comment.char="", sep = "\t")
+  colnames(Tumor_BAF)[3:ncol(Tumor_BAF)] = samplenames
   if(!is.null(Tumor_counts_file)){
 	  Tumor_counts <- read.table(Tumor_counts_file, header=T, row.names=1, comment.char="", sep = "\t")
   }
@@ -1911,8 +1915,10 @@ ascat.loadData = function(Tumor_LogR_file, Tumor_BAF_file, Germline_LogR_file = 
   if(!is.null(Germline_LogR_file)) {
     print.noquote("Reading Germline LogR data...")
     Germline_LogR <- read.table(Germline_LogR_file, header=T, row.names=1, comment.char="", sep = "\t")
+    colnames(Germline_LogR)[3:ncol(Germline_LogR)] = samplenames
     print.noquote("Reading Germline BAF data...")
     Germline_BAF <- read.table(Germline_BAF_file, header=T, row.names=1, comment.char="", sep = "\t")
+    colnames(Germline_BAF)[3:ncol(Germline_BAF)] = samplenames
 	if(!is.null(Germline_counts_file)){
 		  Germline_counts <- read.table(Germline_counts_file, header=T, row.names=1, comment.char="", sep = "\t")
 	}
