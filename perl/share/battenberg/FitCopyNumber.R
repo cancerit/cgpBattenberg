@@ -80,6 +80,11 @@ for(chr in chr.names){
 	print(chr.segmented.BAF.data[1:3,])
 	indices = match(chr.segmented.BAF.data[,2],chr.BAF.data$Position )
 
+	# Check if there are matches, if not skip the remainer of the loop
+	if (sum(is.na(indices))==length(indices) | length(indices)==0) {
+		next
+	}
+
 	#130313
 	chr.segmented.BAF.data = chr.segmented.BAF.data[!is.na(indices),]
 	matched.segmented.BAF.data = rbind(matched.segmented.BAF.data, chr.segmented.BAF.data)
