@@ -114,6 +114,8 @@ const my $IMPUTE_EXE => q{impute2};
 const my $IMPUTE_INPUT => q{%s_impute_input_chr%d_*K.*};
 const my $IMPUTE_OUTPUT => q{%s_impute_output_chr%d.txt};
 
+const my $ALLELE_COUNT_PARA => ' -b %s -o %s -l %s ';
+
 const my @BATTENBERG_RESULT_FILES => qw(
 																					%s_Tumor.png
 																					%s_Germline.png
@@ -693,6 +695,47 @@ sub battenberg_finalise{
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['move_log_dir',0]});
 	}
   return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'),0);
+}
+
+sub determine_gender {
+  my $options = shift;
+  my $gender_loci;
+  if(defined $options->{'genderloci'}) {
+    $gender_loci = $options->{'genderloci'};
+  }
+  else {
+    my $mod_path = dirname(abs_path($0)).'/../share';
+    $mod_path = module_dir('Sanger::CGP::Battenberg::Implement') unless(-e File::Spec->catdir($mod_path, 'gender'));
+
+    my $gender_path = File::Spec->catdir($mod_path, 'gender');
+    $gender_loci = File::Spec->catfile($gender_path,'GRCh37d5_Y.loci');
+  }
+
+  my $command = _which('alleleCounter');
+  $command .= sprintf $ALLELE_COUNT_PARA, $options->{'normbam'}, File::Spec->catfile($options->{'tmp'}, 'normal_gender.tsv'), $gender_loci;
+  $command .= '-m '.$options->{'mbq'} if exists $options->{'mbq'};
+  system($command);
+  my $norm_gender = _parse_gender_results(File::Spec->catfile($options->{'tmp'}, 'normal_gender.tsv'));
+  return $norm_gender;
+}
+
+sub _parse_gender_results {
+  my $file = shift @_;
+  my $gender = 'XX';
+  open my $fh, '<', $file;
+  while(my $line = <$fh>) {
+    next if($line =~ m/^#/);
+    chomp $line;
+    #CHR	POS	Count_A	Count_C	Count_G	Count_T	Good_depth
+    my ($chr, $pos, $a, $c, $g, $t, $depth) = split /\t/, $line;
+    # all we really care about is the depth
+    if($depth > 5) {
+      $gender = 'XY';
+      last; # presence of ANY male loci in normal is sufficient, we shouldn't be using this to check for 'matchedness'
+    }
+  }
+  close $fh;
+  return $gender;
 }
 
 sub tmp_to_outdir {
