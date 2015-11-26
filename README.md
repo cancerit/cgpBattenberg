@@ -41,6 +41,7 @@ Please install the following before attempting to run ``setup.sh <install_to_fol
 
 1. [PCAP-core](https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
 2. [alleleCount](https://github.com/cancerit/alleleCount/releases)
+3. [cgpVcf](https://github.com/cancerit/cgpVcf/releases)
 
 All of the items listed here use the same install method.
 
