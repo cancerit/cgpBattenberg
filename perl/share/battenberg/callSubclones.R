@@ -249,6 +249,7 @@ for (i in 1:length(BAFlevels)) {
 write.table(subcloneres,paste(start.file,"_subclones.txt",sep=""),quote=F,col.names=NA,row.names=T,sep="\t")
 
 # Recalculate the ploidy based on the actual fit
+subcloneres = as.data.frame(subcloneres)
 seg_length = floor((subcloneres$endpos-subcloneres$startpos)/1000)
 is_subclonal_maj = abs(subclones$nMaj1_A - subclones$nMaj2_A) > 0
 is_subclonal_min = abs(subclones$nMin1_A - subclones$nMin2_A) > 0
