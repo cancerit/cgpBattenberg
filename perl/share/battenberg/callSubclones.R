@@ -249,14 +249,14 @@ for (i in 1:length(BAFlevels)) {
 write.table(subcloneres,paste(start.file,"_subclones.txt",sep=""),quote=F,col.names=NA,row.names=T,sep="\t")
 
 # Recalculate the ploidy based on the actual fit
-subcloneres = as.data.frame(subcloneres)
+subcloneres = as.data.frame(subcloneres, stringsAsFactors=F)
 seg_length = floor((subcloneres$endpos-subcloneres$startpos)/1000)
-is_subclonal_maj = abs(subclones$nMaj1_A - subclones$nMaj2_A) > 0
-is_subclonal_min = abs(subclones$nMin1_A - subclones$nMin2_A) > 0
+is_subclonal_maj = abs(subcloneres$nMaj1_A - subcloneres$nMaj2_A) > 0
+is_subclonal_min = abs(subcloneres$nMin1_A - subcloneres$nMin2_A) > 0
 is_subclonal_maj[is.na(is_subclonal_maj)] = F
 is_subclonal_min[is.na(is_subclonal_min)] = F
-segment_states_min = subclones$nMin1_A * ifelse(is_subclonal_min, subclones$frac1_A, 1)  + ifelse(is_subclonal_min, subclones$nMin2_A, 0) * ifelse(is_subclonal_min, subclones$frac2_A, 0) 
-segment_states_maj = subclones$nMaj1_A * ifelse(is_subclonal_maj, subclones$frac1_A, 1)  + ifelse(is_subclonal_maj, subclones$nMaj2_A, 0) * ifelse(is_subclonal_maj, subclones$frac2_A, 0) 
+segment_states_min = subcloneres$nMin1_A * ifelse(is_subclonal_min, subcloneres$frac1_A, 1)  + ifelse(is_subclonal_min, subcloneres$nMin2_A, 0) * ifelse(is_subclonal_min, subcloneres$frac2_A, 0)
+segment_states_maj = subcloneres$nMaj1_A * ifelse(is_subclonal_maj, subcloneres$frac1_A, 1)  + ifelse(is_subclonal_maj, subcloneres$nMaj2_A, 0) * ifelse(is_subclonal_maj, subcloneres$frac2_A, 0)
 ploidy = sum((segment_states_min+segment_states_maj) * seg_length) / sum(seg_length)
   
 # Create user friendly cellularity and ploidy output file
