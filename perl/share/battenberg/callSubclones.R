@@ -250,7 +250,7 @@ write.table(subcloneres,paste(start.file,"_subclones.txt",sep=""),quote=F,col.na
 
 # Recalculate the ploidy based on the actual fit
 subcloneres = as.data.frame(subcloneres, stringsAsFactors=F)
-subclones[,2:ncol(subclones)] = sapply(2:ncol(subclones), function(x) { as.numeric(as.character(subclones[,x])) })
+subcloneres[,2:ncol(subcloneres)] = sapply(2:ncol(subcloneres), function(x) { as.numeric(as.character(subcloneres[,x])) })
 seg_length = floor((subcloneres$endpos-subcloneres$startpos)/1000)
 is_subclonal_maj = abs(subcloneres$nMaj1_A - subcloneres$nMaj2_A) > 0
 is_subclonal_min = abs(subcloneres$nMin1_A - subcloneres$nMin2_A) > 0
