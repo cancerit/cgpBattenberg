@@ -60,14 +60,6 @@ raw.logR.data = read.table(paste(start.file,"mutantLogR.tab",sep=""),sep="\t",he
 raw.BAF.data = raw.BAF.data[!is.na(raw.BAF.data[,3]),]
 raw.logR.data = raw.logR.data[!is.na(raw.logR.data[,3]),]
 
-#chromosome names are sometimes 'chr1', etc.
-if(length(grep("chr",raw.BAF.data[1,1]))>0){
-	raw.BAF.data[,1] = gsub("chr","",raw.BAF.data[,1])
-}
-if(length(grep("chr",raw.logR.data[1,1]))>0){
-	raw.logR.data[,1] = gsub("chr","",raw.logR.data[,1])
-}
-
 BAF.data = NULL
 logR.data = NULL
 segmented.logR.data = NULL
@@ -94,6 +86,7 @@ for(chr in chr.names){
 	indices = match(chr.segmented.BAF.data[,2],chr.logR.data$Position)
 	logR.data = rbind(logR.data, chr.logR.data[indices[!is.na(indices)],])
 	chr.segmented.logR.data = chr.logR.data[indices[!is.na(indices)],]
+	if(length(chr.segmented.BAF.data[,5])==0){next}
 	segs = make_seg_lr(chr.segmented.BAF.data[,5])
 	cum.segs = c(0,cumsum(segs))
 	for(s in 1:length(segs)){
