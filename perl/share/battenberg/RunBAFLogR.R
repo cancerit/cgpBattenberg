@@ -36,7 +36,9 @@ getBAFsAndLogRs(imputeInfoFile,inputFile,normalInputFile,paste(outputDir,"normal
 
 # This is a workaround such that BB doesnt have to be rerun across a lot of samples. The problem is that when ASCAT reads in a file it changes two things: If the samplename starts with a number it places an X in front of the name and underscores are replaced by dots. ascat.loadData was extended to take the real samplenames and place those in the header of the read in data files. However that changes the other underscores and dots thing as well and that changes filenames. We therefore place the dots in the samplenames such that ASCAT will produce the file with dots in it. A complete fix will be added at a later date.
 samplename = gsub("\\-", "\\.", samplename)
-ascat.bc = ascat.loadData(paste(outputDir,"mutantLogR.tab",sep=""),paste(outputDir,"mutantBAF.tab",sep=""),paste(outputDir,"normalLogR.tab",sep=""),paste(outputDir,"normalBAF.tab",sep=""), samplenames=c(samplename))
+impute.info = read.table(imputeInfoFile,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
+chr_names=unique(impute.info[,1])
+ascat.bc = ascat.loadData(paste(outputDir,"mutantLogR.tab",sep=""),paste(outputDir,"mutantBAF.tab",sep=""),paste(outputDir,"normalLogR.tab",sep=""),paste(outputDir,"normalBAF.tab",sep=""), samplenames=c(samplename), chrs=chr_names)
 ascat.plotRawData(ascat.bc, parentDir=outputDir)
 
 q(save="no")
