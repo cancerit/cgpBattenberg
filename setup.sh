@@ -101,9 +101,16 @@ fi
 
 VCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
 if [[ "x$VCF" == "x" ]] ; then
-  echo "PREREQUISITE: Please install cgpVcf before proceeding:"
+  echo "PREREQUISITE: Please install cgpVcf (v1.3.1+) before proceeding:"
   echo "  https://github.com/cancerit/cgpVcf/releases"
   exit 1;
+else
+  GOOD_VER=`perl -Mversion -e "version->parse($VCF) >= version->parse(q{1.3.1}) ? print qq{1\n} : print qq{0\n};"`
+  if [[ $GOOD_VER -ne '1' ]]; then
+    echo "PREREQUISITE: Please install cgpVcf (v1.3.1+) before proceeding:"
+    echo "  https://github.com/cancerit/cgpVcf/releases"
+    exit 1;
+  fi
 fi
 
 ## grab cpanm:
