@@ -69,6 +69,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
   my $record_converter = new Sanger::CGP::Vcf::VCFCNConverter(
     -contigs => [values %$contigs]
   );
+  $record_converter->extended_cn(1);
 
   my ($input_loc,$output_loc,$IN_FH,$OUT_FH);
   try{
@@ -110,7 +111,14 @@ use Sanger::CGP::Vcf::VcfProcessLog;
       my $line = $_;
       chomp($line);
       next if($line =~ m/^\s+chr/);
-      my ($seg_no,$chr,$start,$end,$blank1,$blank2,$blank3,$blank4,$mt_cn_tot,$mt_cn_min,undef) = split('\s+',$line);
+      my ($seg_no, $chr, $start, $end, $mt_cn_tot, $mt_cn_min, $mt_frac, $mt_cn_tot_sec, $mt_cn_min_sec, $mt_frac_sec) = (split('\s+',$line))[0,1,2,3,8,9,10,11,12,13];
+
+      my $extended = {  'mt_fcf' => $mt_frac eq 'NA' ? '.' : $mt_frac,
+                        'mt_tcs' => $mt_cn_tot_sec eq 'NA' ? '.' : $mt_cn_tot_sec,
+                        'mt_mcs' => $mt_cn_min_sec eq 'NA' ? '.' : $mt_cn_min_sec,
+                        'mt_fcs' => $mt_frac_sec eq 'NA' ? '.' : $mt_frac_sec,
+                      };
+
       my $wt_cn_tot = 2;
       my $wt_cn_min = 1;
       $start--; # all symbolic ALTs require preceeding base padding
@@ -125,7 +133,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
                                                                       && defined($mt_cn_min));
 
       my $start_allele = $fai->fetch("$chr:$start-$start");
-      print $OUT_FH $record_converter->generate_record($chr,$start,$end,$start_allele,$wt_cn_tot,$wt_cn_min,$mt_cn_tot,$mt_cn_min);
+      print $OUT_FH $record_converter->generate_record($chr,$start,$end,$start_allele,$wt_cn_tot,$wt_cn_min,$mt_cn_tot,$mt_cn_min, $extended);
     }
 
   }catch{
