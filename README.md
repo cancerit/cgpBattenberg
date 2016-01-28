@@ -37,10 +37,11 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 
 ## Installation
 
-Please install the following before attempting to run ``setup.sh <install_to_folder>``
+Please install the following before attempting to run ``setup.sh <install_to_folder> [X/lib/perl:Y/lib/perl]``
 
 1. [PCAP-core](https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
 2. [alleleCount](https://github.com/cancerit/alleleCount/releases)
+3. [cgpVcf](https://github.com/cancerit/cgpVcf/releases) > v1.3.1
 
 All of the items listed here use the same install method.
 

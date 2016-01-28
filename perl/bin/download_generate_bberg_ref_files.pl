@@ -21,11 +21,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
 
-BEGIN {
-  use Cwd qw(abs_path);
-  use File::Basename;
-  push (@INC,dirname(abs_path($0)).'/../lib');
-};
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 
 use strict;
 use warnings FATAL => 'all';
@@ -342,6 +339,9 @@ sub setup{
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
 	pod2usage(-msg  => "\nERROR: Invalid inputs. Must provide o|out-dir.\n", -verbose => 1,  -output => \*STDERR) if(!exists $opts{'o'} || !defined $opts{'o'});
+
+  # make outdir absolute
+  $opts{'o'} = File::Spec->rel2abs( $opts{'o'} );
 
 	#Ensure download and other directories exist, if not create it.
 	my $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
