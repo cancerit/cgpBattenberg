@@ -143,8 +143,8 @@ sub prepare {
   else {
     $options->{'tumbam'} = File::Spec->rel2abs($options->{'tumbam'});
     $options->{'normbam'} = File::Spec->rel2abs($options->{'normbam'});
-    $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}))[0];
-    $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}))[0];
+    $options->{'tumour_name'} = (PCAP::Bam::sample_name($options->{'tumbam'}, 1))[0];
+    $options->{'normal_name'} = (PCAP::Bam::sample_name($options->{'normbam'}, 1))[0];
   }
 	$options->{'mod_path'} = get_mod_path();
 	$options->{'bat_path'} = File::Spec->catdir($options->{'mod_path'}, 'battenberg');
