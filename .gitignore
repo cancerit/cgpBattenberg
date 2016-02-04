@@ -7,3 +7,5 @@
 /setup.log
 /perl/perltidy.LOG
 /perl/bin/cpanm
+/perl/MYMETA.json
+/perl/MYMETA.yml
