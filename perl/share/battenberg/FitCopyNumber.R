@@ -90,7 +90,7 @@ for(chr in chr.names){
 	segs = make_seg_lr(chr.segmented.BAF.data[,5])
 	cum.segs = c(0,cumsum(segs))
 	for(s in 1:length(segs)){
-		chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3] = mean(chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3])
+		chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3] = mean(chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3], na.rm=T)
 	}
 	segmented.logR.data = rbind(segmented.logR.data,chr.segmented.logR.data)
 	#print(paste(nrow(matched.segmented.BAF.data),nrow(segmented.logR.data),nrow(logR.data),sep=","))
