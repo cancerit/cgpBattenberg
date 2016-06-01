@@ -26,5 +26,6 @@ share/battenberg/RunBAFLogR.R
 share/battenberg/RunGetHaplotypedBAFs.R
 share/battenberg/RunImpute.R
 share/battenberg/segmentBAFphased.R
+share/gender/GRCh37d5_Y.loci
 t/1_pm_compile.t
 t/2_pl_compile.t
