@@ -30,7 +30,8 @@ impute.info = read.table(imputeInfoFile,header=F,row.names=NULL,sep="\t",strings
 chr_names=unique(impute.info[,1])
 chr_name = chr_names[chr]
 
-imageFileName = paste(samplename,"_chr",chr_name,"_heterozygousData.png",sep="")
+imageFileName = paste(samplename,"_",ifelse(grepl("chr", chr_name), "", "chr"),
+                      chr_name,"_heterozygousData.png",sep="")
 
 mut_data<-read.table(mutFile,sep="\t",header=T)
 

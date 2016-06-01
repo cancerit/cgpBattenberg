@@ -34,12 +34,19 @@ done_message () {
     fi
 }
 
-if [ "$#" -ne "1" ] ; then
-  echo "Please provide an installation path  such as /opt/ICGC"
+if [[ ($# -ne 1 && $# -ne 2) ]] ; then
+  echo "Please provide an installation path such as /opt/pancan and optionally perl lib paths to allow, e.g."
+  echo "  ./setup.sh /opt/myBundle"
+  echo "OR all elements versioned:"
+  echo "  ./setup.sh /opt/cgpBattenberg-X.X.X /opt/PCAP-X.X.X/lib/perl:/opt/alleleCount-X.X.X/lib/perl:/opt/cgpVcf-X.X.X/lib/perl"
   exit 0
 fi
 
 INST_PATH=$1
+
+if [[ $# -eq 2 ]] ; then
+  CGP_PERLLIBS=$2
+fi
 
 # get current directory
 INIT_DIR=`pwd`
@@ -51,11 +58,12 @@ INST_PATH=`pwd`
 cd $INIT_DIR
 
 # make sure that build is self contained
-unset PERL5LIB
-ARCHNAME=`perl -e 'use Config; print $Config{archname};'`
 PERLROOT=$INST_PATH/lib/perl5
-PERLARCH=$PERLROOT/$ARCHNAME
-export PERL5LIB="$PERLROOT:$PERLARCH"
+if [ -z ${CGP_PERLLIBS+x} ]; then
+  export PERL5LIB="$PERLROOT"
+else
+  export PERL5LIB="$PERLROOT:$CGP_PERLLIBS"
+fi
 
 #create a location to build dependencies
 SETUP_DIR=$INIT_DIR/install_tmp
@@ -79,9 +87,17 @@ echo > $INIT_DIR/setup.log
 
 PCAP=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' PCAP`
 if [[ "x$PCAP" == "x" ]] ; then
-  echo "PREREQUISITE: Please install PCAP-core before proceeding:"
+  echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding:"
   echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
   exit 1;
+else
+  # need the leading 'v' on versions so comparison of those that don't have hotfix element behave correctly, i.e. (X.X, rather than X.X.X)
+  GOOD_VER=`perl -Mversion -e "version->parse(q{v$PCAP}) >= version->parse(q{v}.q{1.12}) ? print qq{1\n} : print qq{0\n};"`
+  if [[ $GOOD_VER -ne '1' ]]; then
+    echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding:"
+    echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+    exit 1;
+  fi
 fi
 
 AC=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::AlleleCount`
@@ -93,9 +109,17 @@ fi
 
 VCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
 if [[ "x$VCF" == "x" ]] ; then
-  echo "PREREQUISITE: Please install cgpVcf before proceeding:"
+  echo "PREREQUISITE: Please install cgpVcf (v1.3.1+) before proceeding:"
   echo "  https://github.com/cancerit/cgpVcf/releases"
   exit 1;
+else
+  # need the leading 'v' on versions so comparison of those that don't have hotfix element behave correctly, i.e. (X.X, rather than X.X.X)
+  GOOD_VER=`perl -Mversion -e "version->parse(q{v$VCF}) >= version->parse(q{v}.q{1.3.1}) ? print qq{1\n} : print qq{0\n};"`
+  if [[ $GOOD_VER -ne '1' ]]; then
+    echo "PREREQUISITE: Please install cgpVcf (v1.3.1+) before proceeding:"
+    echo "  https://github.com/cancerit/cgpVcf/releases"
+    exit 1;
+  fi
 fi
 
 ## grab cpanm:
@@ -150,7 +174,6 @@ echo "Please add the following to beginning of path:"
 echo "  $INST_PATH/bin"
 echo "Please add the following to beginning of PERL5LIB:"
 echo "  $PERLROOT"
-echo "  $PERLARCH"
 echo
 
 exit 0

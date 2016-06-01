@@ -77,7 +77,8 @@ for (chr in unique(BAFraw[,1])) {
     BAFsegm = res$yhat
   }
 
-  png(filename = paste(sample,"_RAFseg_chr",chr,".png",sep=""), width = 2000, height = 1000, res = 200)
+  png(filename = paste(sample,"_RAFseg_",ifelse(grepl("chr", chr), "", "chr"),
+                       chr,".png",sep=""), width = 2000, height = 1000, res = 200)
   par(mar = c(5,5,5,0.5), cex = 0.4, cex.main=3, cex.axis = 2, cex.lab = 2)
   plot(c(min(pos)/1000000,max(pos)/1000000),c(0,1),pch=".",type = "n",
 	   main = paste(sample,", chromosome ", chr, sep=""), xlab = "Position (Mb)", ylab = "BAF (phased)")
@@ -94,7 +95,8 @@ for (chr in unique(BAFraw[,1])) {
   	BAFphseg = res$yhat
   }
 
-  png(filename = paste(sample,"_chr",chr,".png",sep=""), width = 2000, height = 1000, res = 200)
+  png(filename = paste(sample,"_",ifelse(grepl("chr", chr), "", "chr"),
+                       chr,".png",sep=""), width = 2000, height = 1000, res = 200)
   par(mar = c(5,5,5,0.5), cex = 0.4, cex.main=3, cex.axis = 2, cex.lab = 2)
   plot(c(min(pos)/1000000,max(pos)/1000000),c(0,1),pch=".",type = "n",
 	   main = paste(sample,", chromosome ", chr, sep=""), xlab = "Position (Mb)", ylab = "BAF (phased)")
@@ -104,7 +106,7 @@ for (chr in unique(BAFraw[,1])) {
   dev.off()
 
   BAFphased = ifelse(BAFsegm>0.5,BAF,1-BAF)
-  BAFoutputchr = cbind(rep(chr,length(BAFphseg)),pos,BAF,BAFphased,BAFphseg)
+  BAFoutputchr = data.frame(Chromosome=rep(chr, length(BAFphseg)), Position=pos, BAF=BAF, BAFphased=BAFphased, BAFseg=BAFphseg)
   BAFoutput=rbind(BAFoutput,BAFoutputchr)
 }
 colnames(BAFoutput) = c("Chromosome","Position","BAF","BAFphased","BAFseg")

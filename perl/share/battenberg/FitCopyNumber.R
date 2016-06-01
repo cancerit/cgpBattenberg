@@ -60,14 +60,6 @@ raw.logR.data = read.table(paste(start.file,"mutantLogR.tab",sep=""),sep="\t",he
 raw.BAF.data = raw.BAF.data[!is.na(raw.BAF.data[,3]),]
 raw.logR.data = raw.logR.data[!is.na(raw.logR.data[,3]),]
 
-#chromosome names are sometimes 'chr1', etc.
-if(length(grep("chr",raw.BAF.data[1,1]))>0){
-	raw.BAF.data[,1] = gsub("chr","",raw.BAF.data[,1])
-}
-if(length(grep("chr",raw.logR.data[1,1]))>0){
-	raw.logR.data[,1] = gsub("chr","",raw.logR.data[,1])
-}
-
 BAF.data = NULL
 logR.data = NULL
 segmented.logR.data = NULL
@@ -80,6 +72,11 @@ for(chr in chr.names){
 	print(chr.segmented.BAF.data[1:3,])
 	indices = match(chr.segmented.BAF.data[,2],chr.BAF.data$Position )
 
+	# Check if there are matches, if not skip the remainer of the loop
+	if (sum(is.na(indices))==length(indices) | length(indices)==0) {
+		next
+	}
+
 	#130313
 	chr.segmented.BAF.data = chr.segmented.BAF.data[!is.na(indices),]
 	matched.segmented.BAF.data = rbind(matched.segmented.BAF.data, chr.segmented.BAF.data)
@@ -89,10 +86,11 @@ for(chr in chr.names){
 	indices = match(chr.segmented.BAF.data[,2],chr.logR.data$Position)
 	logR.data = rbind(logR.data, chr.logR.data[indices[!is.na(indices)],])
 	chr.segmented.logR.data = chr.logR.data[indices[!is.na(indices)],]
+	if(length(chr.segmented.BAF.data[,5])==0){next}
 	segs = make_seg_lr(chr.segmented.BAF.data[,5])
 	cum.segs = c(0,cumsum(segs))
 	for(s in 1:length(segs)){
-		chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3] = mean(chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3])
+		chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3] = mean(chr.segmented.logR.data[(cum.segs[s]+1):cum.segs[s+1],3], na.rm=T)
 	}
 	segmented.logR.data = rbind(segmented.logR.data,chr.segmented.logR.data)
 	#print(paste(nrow(matched.segmented.BAF.data),nrow(segmented.logR.data),nrow(logR.data),sep=","))
@@ -137,9 +135,5 @@ is.ref.better = out$is.ref.better
 
 rho_psi_output = data.frame(rho = c(ascat_optimum_pair$rho,ascat_optimum_pair_fraction_of_genome$rho,ascat_optimum_pair_ref_seg$rho),psi = c(ascat_optimum_pair$psi,ascat_optimum_pair_fraction_of_genome$psi,ascat_optimum_pair_ref_seg$psi), ploidy = c(ascat_optimum_pair$ploidy,ascat_optimum_pair_fraction_of_genome$ploidy,ascat_optimum_pair_ref_seg$ploidy), distance = c(NA,out$distance_without_ref,out$distance), is.best = c(NA,!is.ref.better,is.ref.better),row.names=c("ASCAT","FRAC_GENOME","REF_SEG"))
 write.table(rho_psi_output,paste(start.file,"rho_and_psi.txt",sep=""),quote=F,sep="\t")
-
-# Create user friendly cellularity and ploidy output file
-cellularity_ploidy_output = data.frame(cellularity = c(ascat_optimum_pair_fraction_of_genome$rho), ploidy = c(ascat_optimum_pair_fraction_of_genome$ploidy), psi = c(ascat_optimum_pair_fraction_of_genome$psi))
-write.table(cellularity_ploidy_output, paste(start.file,"cellularity_ploidy.txt",sep=""), quote=F, sep="\t", row.names=F)
 
 q(save="no")

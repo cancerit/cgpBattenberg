@@ -41,8 +41,9 @@ for(r in 1:nrow(inpute.info)){
 		boundaries = c(boundaries,inpute.info[r,6])
 	}
 	boundaries=boundaries
+	# Startpoint is boundaries[b]+1 to make sure windows do not overlap and therefore SNPs cannot occur more than once
 	for(b in 1:(length(boundaries)-1)){
-		cmd = paste(impute.executable," -m ",inpute.info[r,3]," -h ",inpute.info[r,4]," -l ",inpute.info[r,2]," -g ",inFileStart,chr,".txt -int ",boundaries[b]," ",boundaries[b+1]," -Ne 20000 -o ",outFileStart,chr,"_",boundaries[b]/1000,"K_",boundaries[b+1]/1000,"K.txt -phase",sep="")
+		cmd = paste(impute.executable," -m ",inpute.info[r,3]," -h ",inpute.info[r,4]," -l ",inpute.info[r,2]," -g ",inFileStart,chr,".txt -int ",boundaries[b]+1," ",boundaries[b+1]," -Ne 20000 -o ",outFileStart,chr,"_",boundaries[b]/1000,"K_",boundaries[b+1]/1000,"K.txt -phase",sep="")
 		system(cmd, wait=T)
 	}
 }

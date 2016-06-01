@@ -21,11 +21,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
 
-BEGIN {
-  use Cwd qw(abs_path);
-  use File::Basename;
-  push (@INC,dirname(abs_path($0)).'/../lib');
-};
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 
 use strict;
 use warnings FATAL => 'all';
@@ -283,7 +280,7 @@ sub download_unpack_files{
 	my ($opts) = @_;
 	my $impute_download = $opts->{'u'}.sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION);
 	my $imputetgz = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION));
-	download_file($impute_download,$imputetgz) unless(-e $imputetgz.'.dl_success');
+	download_file($impute_download,$imputetgz,$opts->{'c'}) unless(-e $imputetgz.'.dl_success');
 	unpack_file($imputetgz,$opts->{'tmp'},'tgz');
 	return;
 }
@@ -296,16 +293,20 @@ sub unpack_file{
 }
 
 sub download_file{
-	my ($url,$file) = @_;
-	my $dirname  = dirname($file);
-	$File::Fetch::BLACKLIST = [qw(lwp)];
-	$url =~ s/^https/http/;
-	my $ff = File::Fetch->new(uri => $url);
-	my $local = $ff->fetch(to => $dirname) or croak $ff->error;
-	# if the filename isn't what we expect move it
-	unless($local eq $file) {
-	  move($local, $file) or croak $!;
-	}
+	my ($url,$file,$use_curl) = @_;
+        if ($use_curl) {
+          my $output = `curl --location $url > $file`;
+        } else {
+          my $dirname  = dirname($file);
+          $File::Fetch::BLACKLIST = [qw(lwp)];
+          $url =~ s/^https/http/;
+          my $ff = File::Fetch->new(uri => $url);
+          my $local = $ff->fetch(to => $dirname) or croak $ff->error;
+          # if the filename isn't what we expect move it
+          unless($local eq $file) {
+            move($local, $file) or croak $!;
+          }
+        }
 	# touch a file to show the archive is complete and not partial to prevent re-dl (3.7GB) if this bit is successful
 	# likely use case would be running out of disk space during unpacking intermediate space required is ~16GB
 	my $success_file = $file.'.dl_success';
@@ -323,6 +324,7 @@ sub setup{
   				'h|help' => \$opts{'h'},
 					'm|man' => \$opts{'m'},
 					'v|version' => \$opts{'v'},
+					'c|use-curl' => \$opts{'c'},
 					'o|out-dir=s' => \$opts{'o'},
 					'd|download-version=s' => \$opts{'d'},
           'u|url=s' => \$opts{'u'},
@@ -337,6 +339,9 @@ sub setup{
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
 	pod2usage(-msg  => "\nERROR: Invalid inputs. Must provide o|out-dir.\n", -verbose => 1,  -output => \*STDERR) if(!exists $opts{'o'} || !defined $opts{'o'});
+
+  # make outdir absolute
+  $opts{'o'} = File::Spec->rel2abs( $opts{'o'} );
 
 	#Ensure download and other directories exist, if not create it.
 	my $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
@@ -375,6 +380,7 @@ download_generate_bberg_ref_files.pl [options]
 
     Optional parameters:
       -url                      -u  URL to download battenberg impute reference data from [see docs for default url]
+      -use-curl                 -c  Use curl for the download
       -download-version         -d  Download version (part of download name) default: [v3]
 
     Other:

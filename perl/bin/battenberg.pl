@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ##########LICENCE##########
-# Copyright (c) 2014,2015 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
 #
@@ -45,6 +45,7 @@ const my @VALID_PROCESS => qw( allelecount baflog imputefromaf
 															segmentphased fitcn subclones finalise );
 
 const my @VALID_PROTOCOLS => qw( WGS WXS RNA );
+const my @VALID_GENDERS => qw(XX XY L);
 
 const my $DEFAULT_ALLELE_COUNT_MBQ => 20;
 const my $DEFAULT_PLATFORM_GAMMA=>1;
@@ -135,7 +136,6 @@ sub setup {
 					'p|process=s' => \$opts{'process'},
 					'u|thousand-genomes-loc=s' => \$opts{'1kgenloc'},
 					'r|reference=s' => \$opts{'reference'},
-					's|is-male' => \$opts{'is_male'},
 					'e|impute-info=s' => \$opts{'impute_info'},
 					'c|prob-loci=s' => \$opts{'prob_loci'},
 					'g|logs=s' => \$opts{'lgs'},
@@ -157,11 +157,13 @@ sub setup {
           'pr|protocol=s' => \$opts{'protocol'},
           'pl|platform=s' => \$opts{'platform'},
           'a|allele-counts=s' => \$opts{'allele-counts'},
+          'ge|gender=s' => \$opts{'gender'},
+          'gl|genderloci=s' => \$opts{'genderloci'},
           'j|jobs' => \$opts{'jobs'},
 		) or pod2usage(2);
 
-	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 0) if(defined $opts{'h'});
-  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'m'});
+	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
+  pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
 
   # then check for no args:
   my $defined;
@@ -204,6 +206,16 @@ sub setup {
 
 	delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
+
+  if(defined $opts{'gender'}){
+    pod2usage(-message => 'unknown gender value: '.$opts{'gender'}, -verbose => 1) unless(first {$_ eq $opts{'gender'}} @VALID_GENDERS);
+    if($opts{'gender'} eq 'L') {
+      die "ERROR: Gender of XY/XX must be supplied when 'allele-counts' defined\n" if(defined $opts{'allele-counts'});
+      $opts{'gender'} = Sanger::CGP::Battenberg::Implement::determine_gender(\%opts);
+    }
+  } else {
+    pod2usage(-message => 'gender not set', -verbose => 1);
+  }
 
   if(exists $opts{'protocol'} && defined $opts{'protocol'}) {
     my $bad_prot = 1;
@@ -269,7 +281,7 @@ sub setup {
 	make_path($logs) unless(-d $logs);
 	$opts{'logs'} = $logs;
 
-	if(exists($opts{'is_male'}) && defined($opts{'is_male'})){
+	if($opts{'gender'} eq 'XY'){
 		$opts{'is_male'} = 'TRUE';
 	}else{
 		$opts{'is_male'} = 'FALSE';
@@ -291,6 +303,7 @@ sub setup {
 
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
+
 	return \%opts;
 }
 
@@ -312,7 +325,7 @@ battenberg.pl [options]
                                  - when '-a' defined sample name
     -normbam               -nb  Path to normal bam file
                                  - when '-a' defined sample name
-    -is-male               -s   Flag, if the sample is male
+    -gender                -ge  Gender, XX, XY or L (see -gl)
     -impute-info           -e   Location of the impute info file
     -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
     -ignore-contigs-file   -ig  File containing contigs to ignore
@@ -336,6 +349,8 @@ battenberg.pl [options]
     -assembly              -ra  Reference assembly []
     -protocol              -pr  Sequencing protocol [WGS]
     -platform              -pl  Sequencing platfrom [ILLUMINA]
+    -genderloci            -gl  List of gender loci, required when '-ge L' [share/gender/GRCh37d5_Y.loci]
+                                - these are loci that will not present at all in a female sample
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)

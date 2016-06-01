@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ##########LICENCE##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: David Jones <cgpit@sanger.ac.uk>
 #
@@ -34,7 +34,7 @@ use autodie qw(:all);
 use Getopt::Long;
 use Pod::Usage qw(pod2usage);
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 use Try::Tiny;
 use PCAP::Cli;
 
@@ -69,6 +69,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
   my $record_converter = new Sanger::CGP::Vcf::VCFCNConverter(
     -contigs => [values %$contigs]
   );
+  $record_converter->extended_cn(1);
 
   my ($input_loc,$output_loc,$IN_FH,$OUT_FH);
   try{
@@ -105,12 +106,19 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 
 
     #Iterate through input and create a record for each.
-    my $fai = Bio::DB::Sam::Fai->load($reference);
+    my $fai = Bio::DB::HTS::Fai->load($reference);
     while(<$IN_FH>){
       my $line = $_;
       chomp($line);
       next if($line =~ m/^\s+chr/);
-      my ($seg_no,$chr,$start,$end,$blank1,$blank2,$blank3,$blank4,$mt_cn_tot,$mt_cn_min,undef) = split('\s+',$line);
+      my ($seg_no, $chr, $start, $end, $mt_cn_tot, $mt_cn_min, $mt_frac, $mt_cn_tot_sec, $mt_cn_min_sec, $mt_frac_sec) = (split('\s+',$line))[0,1,2,3,8,9,10,11,12,13];
+
+      my $extended = {  'mt_fcf' => $mt_frac eq 'NA' ? '.' : $mt_frac,
+                        'mt_tcs' => $mt_cn_tot_sec eq 'NA' ? '.' : $mt_cn_tot_sec,
+                        'mt_mcs' => $mt_cn_min_sec eq 'NA' ? '.' : $mt_cn_min_sec,
+                        'mt_fcs' => $mt_frac_sec eq 'NA' ? '.' : $mt_frac_sec,
+                      };
+
       my $wt_cn_tot = 2;
       my $wt_cn_min = 1;
       $start--; # all symbolic ALTs require preceeding base padding
@@ -125,7 +133,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
                                                                       && defined($mt_cn_min));
 
       my $start_allele = $fai->fetch("$chr:$start-$start");
-      print $OUT_FH $record_converter->generate_record($chr,$start,$end,$start_allele,$wt_cn_tot,$wt_cn_min,$mt_cn_tot,$mt_cn_min);
+      print $OUT_FH $record_converter->generate_record($chr,$start,$end,$start_allele,$wt_cn_tot,$wt_cn_min,$mt_cn_tot,$mt_cn_min, $extended);
     }
 
   }catch{
@@ -172,7 +180,7 @@ sub parse_samples {
     $param_mod = 'w';
   }
   if(defined $opts->{'sb'.$param_mod}) {
-    $sam = Bio::DB::Sam->new(-bam => $opts->{'sb'.$param_mod}, -fasta => $reference);
+    $sam = Bio::DB::HTS->new(-bam => $opts->{'sb'.$param_mod}, -fasta => $reference);
     $samp_ref = Sanger::CGP::Vcf::BamUtil->parse_samples($sam->header->text,
                                                           $opts->{$param_mod.'ss'},
                                                           $opts->{$param_mod.'sq'},
@@ -249,7 +257,6 @@ sub setup{
   PCAP::Cli::file_for_reading('r', $opts{'r'});
 
   # required: direct input
-  pod2usage(-message  => "\nERROR: rs|reference-species must be defined.\n", -verbose => 1,  -output => \*STDERR) unless($opts{'rs'});
   pod2usage(-message  => "\nERROR: msq|sample-sequencing-protocol-mut must be defined.\n", -verbose => 1,  -output => \*STDERR) if(exists $opts{'msq'} && ! defined $opts{'msq'});
   pod2usage(-message  => "\nERROR: wsq|sample-sequencing-protocol-norm must be defined.\n", -verbose => 1,  -output => \*STDERR) if(exists $opts{'wsq'} && ! defined $opts{'wsq'});
 
