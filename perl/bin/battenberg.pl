@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ##########LICENCE##########
-# Copyright (c) 2014,2015 Genome Research Ltd.
+# Copyright (c) 2014-2016 Genome Research Ltd.
 #
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
 #
@@ -162,8 +162,8 @@ sub setup {
           'j|jobs' => \$opts{'jobs'},
 		) or pod2usage(2);
 
-	pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 0) if(defined $opts{'h'});
-  pod2usage(-message => Sanger::CGP::Battenberg::license, -verbose => 2) if(defined $opts{'m'});
+	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
+  pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
 
   # then check for no args:
   my $defined;
