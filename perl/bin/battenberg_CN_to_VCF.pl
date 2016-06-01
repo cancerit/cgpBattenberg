@@ -34,7 +34,7 @@ use autodie qw(:all);
 use Getopt::Long;
 use Pod::Usage qw(pod2usage);
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 use Try::Tiny;
 use PCAP::Cli;
 
@@ -106,7 +106,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
 
 
     #Iterate through input and create a record for each.
-    my $fai = Bio::DB::Sam::Fai->load($reference);
+    my $fai = Bio::DB::HTS::Fai->load($reference);
     while(<$IN_FH>){
       my $line = $_;
       chomp($line);
@@ -180,7 +180,7 @@ sub parse_samples {
     $param_mod = 'w';
   }
   if(defined $opts->{'sb'.$param_mod}) {
-    $sam = Bio::DB::Sam->new(-bam => $opts->{'sb'.$param_mod}, -fasta => $reference);
+    $sam = Bio::DB::HTS->new(-bam => $opts->{'sb'.$param_mod}, -fasta => $reference);
     $samp_ref = Sanger::CGP::Vcf::BamUtil->parse_samples($sam->header->text,
                                                           $opts->{$param_mod.'ss'},
                                                           $opts->{$param_mod.'sq'},
