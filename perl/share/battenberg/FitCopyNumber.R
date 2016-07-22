@@ -38,16 +38,16 @@ if( length( args ) >= 6)
 			min.ploidy = as.numeric(args[8])
 			max.ploidy = as.numeric(args[9])
 			min.rho = as.numeric(args[10])
-			min.goodness.of.fit = as.numeric(args[11])
-			if( length( args ) >= 12 ){
-				preset_rho = as.numeric(args[12])
-				preset_psi = as.numeric(args[13])
+			max.rho = as.numeric(args[11])
+			min.goodness.of.fit = as.numeric(args[12])
+			if( length( args ) >= 13 ){
+				preset_rho = as.numeric(args[13])
+				preset_psi = as.numeric(args[14])
 				use_preset_rho_psi=T
 			}
 		}
 	}
 }
-
 read_depth=30
 
 source(paste(lib_path,"ascat.R",sep="/"))

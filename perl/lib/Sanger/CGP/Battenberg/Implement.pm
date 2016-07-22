@@ -466,6 +466,7 @@ sub battenberg_fitcopyno{
 												$options->{'min_ploidy'},
 												$options->{'max_ploidy'},
 												$options->{'min_rho'},
+												$options->{'max_rho'},
 												$options->{'min_goodness'},
 											);
 
