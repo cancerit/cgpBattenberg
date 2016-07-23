@@ -1405,15 +1405,21 @@ find_centroid_of_global_minima <- function( d, ref_seg_matrix, ref_major, ref_mi
 # copynumberprofilespng: if NA: possible copy number profiles are plotted, if filename is given, the plot is written to a .png file
 # nonroundedprofilepng: if NA: copy number profile before rounding is plotted (total copy number as well as the copy number of the minor allele), if filename is given, the plot is written to a .png file
 #the limit on rho is lenient and may lead to spurious solutions
-runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,max.rho=1.05,min.goodness=63, uninformative_BAF_threshold = 0.51) {
+runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,max.rho=1.00,min.goodness=63, uninformative_BAF_threshold = 0.51) {
   ch = chromosomes
   b = bafsegmented
   r = lrrsegmented[names(bafsegmented)]
 
   library(RColorBrewer)
+  
+  # Adapt the rho/psi boundaries for the local maximum searching below to work
+  dist_min_psi = max(min.ploidy-0.6, 0)
+  dist_max_psi = max.ploidy+0.6 
+  dist_min_rho = min(min.rho-0.1, 0)
+  dist_max_rho = max.rho+0.05
 
   s = make_segments(r,b)
-  dist_matrix_info <- create_distance_matrix( s, dist_choice, gamma, uninformative_BAF_threshold =uninformative_BAF_threshold, min_psi=min.ploidy, max_psi=max.ploidy, min_rho=min.rho, max_rho=max.rho)
+  dist_matrix_info <- create_distance_matrix( s, dist_choice, gamma, uninformative_BAF_threshold =uninformative_BAF_threshold, min_psi=dist_min_psi, max_psi=dist_max_psi, min_rho=dist_min_rho, max_rho=dist_max_rho)
   d = dist_matrix_info$distance_matrix
   minimise = dist_matrix_info$minimise
 
