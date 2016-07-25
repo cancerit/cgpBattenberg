@@ -1432,7 +1432,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
     png(filename = distancepng, width = ploidy_single_ploid_steps*pix_p_ploid, height = rho_5perc_steps*pix_p_cellularity_5perc, res = 1000/7)
   }
 
-  par(mar = c(5,5,0.5,0.5), cex=0.75, cex.lab=2, cex.axis=2)
+  par(mar = c(5,6,0.5,5), cex=0.75, cex.lab=2, cex.axis=2)
 
   #hmcol = rev(colorRampPalette(brewer.pal(10, "RdBu"))(256))
   if(minimise){ #DCW 240314 reverse colour palette, so blue always corresponds to best region
