@@ -126,8 +126,9 @@ if(use_preset_rho_psi){
 distance.outfile=paste(start.file,"second_distance.png",sep="",collapse="") # kjd 20-2-2014
 copynumberprofile.outfile=paste(start.file,"second_copynumberprofile.png",sep="",collapse="") # kjd 20-2-2014
 nonroundedprofile.outfile=paste(start.file,"second_nonroundedprofile.png",sep="",collapse="") # kjd 20-2-2014
+cnaStatusFile = paste(start.file,"copynumber_solution_status.txt",sep="",collapse="")
 
-out=run_clonal_ASCAT( logR, 1-BAF.data[,3], segLogR, segBAF, chr.segs, matched.segmented.BAF.data, ascat_optimum_pair, dist_choice, distance.outfile, copynumberprofile.outfile, nonroundedprofile.outfile, gamma_param=gamma_param, read_depth, uninformative_BAF_threshold, allow100percent=T, reliabilityFile=NA, psi_min_initial=min.ploidy, psi_max_initial=max.ploidy, rho_min_initial=min.rho, rho_max_initial=max.rho) # kjd 21-2-2014
+out=run_clonal_ASCAT( logR, 1-BAF.data[,3], segLogR, segBAF, chr.segs, matched.segmented.BAF.data, ascat_optimum_pair, dist_choice, distance.outfile, copynumberprofile.outfile, nonroundedprofile.outfile, cnaStatusFile=cnaStatusFile, gamma_param=gamma_param, read_depth, uninformative_BAF_threshold, allow100percent=T, reliabilityFile=NA, psi_min_initial=min.ploidy, psi_max_initial=max.ploidy, rho_min_initial=min.rho, rho_max_initial=max.rho) # kjd 21-2-2014
 
 ascat_optimum_pair_fraction_of_genome = out$output_optimum_pair_without_ref
 ascat_optimum_pair_ref_seg = out$output_optimum_pair

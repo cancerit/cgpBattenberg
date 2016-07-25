@@ -1404,8 +1404,9 @@ find_centroid_of_global_minima <- function( d, ref_seg_matrix, ref_major, ref_mi
 # distancepng: if NA: distance is plotted, if filename is given, the plot is written to a .png file
 # copynumberprofilespng: if NA: possible copy number profiles are plotted, if filename is given, the plot is written to a .png file
 # nonroundedprofilepng: if NA: copy number profile before rounding is plotted (total copy number as well as the copy number of the minor allele), if filename is given, the plot is written to a .png file
+# cnaStatusFile: File where the copy number profile status is written to. This contains either the message "No suitable copy number solution found" or "X copy number solutions found"
 #the limit on rho is lenient and may lead to spurious solutions
-runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,max.rho=1.00,min.goodness=63, uninformative_BAF_threshold = 0.51) {
+runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,cnaStatusFile="copynumber_solution_status.txt",min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,max.rho=1.00,min.goodness=63, uninformative_BAF_threshold = 0.51) {
   ch = chromosomes
   b = bafsegmented
   r = lrrsegmented[names(bafsegmented)]
@@ -1415,7 +1416,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
   # Adapt the rho/psi boundaries for the local maximum searching below to work
   dist_min_psi = max(min.ploidy-0.6, 0)
   dist_max_psi = max.ploidy+0.6 
-  dist_min_rho = max(min.rho-0.06, 0.05)
+  dist_min_rho = max(min.rho-0.10, 0.05)
   dist_max_rho = max.rho+0.05
 
   s = make_segments(r,b)
@@ -1443,7 +1444,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
   image(log(d), col = hmcol, axes = F, ann = FALSE)
 
   mtext(side = 1, text = "Ploidy", line = 3, padj=0, cex=1.5)
-  mtext(side = 2, text = "Aberrant cell fraction", line = 3, padj=-0.5, cex=1.5)
+  mtext(side = 2, text = "Purity", line = 3, padj=-0.5, cex=1.5)
 
   # Convenience function to add the last element to the axis. We've defined a step size
   # for the axis, but the range of values supplied doesn't always fit exactly. The lower
@@ -1566,6 +1567,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
   }
 
   if (nropt>0) {
+    write.table(paste(nropt, " copy number solutions found", sep=""), file=cnaStatusFile, quote=F, col.names=F, row.names=F)
     optlim = sort(localmin)[1]
     for (i in 1:length(optima)) {
       if(optima[[i]][1] == optlim) {
@@ -1582,7 +1584,11 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
       }
     }
   } else {
+    write.table(paste("no copy number solutions found", sep=""), file=cnaStatusFile, quote=F, col.names=F, row.names=F)
     print("No suitable copy number solution found")
+    psi = NA
+    ploidy = NA
+    rho = NA
   }
 
   if (!is.na(distancepng)) {
