@@ -1416,8 +1416,8 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
   # Adapt the rho/psi boundaries for the local maximum searching below to work
   dist_min_psi = max(min.ploidy-0.6, 0)
   dist_max_psi = max.ploidy+0.6 
-  dist_min_rho = max(min.rho-0.10, 0.05)
-  dist_max_rho = max.rho+0.05
+  dist_min_rho = max(min.rho-0.03, 0.05)
+  dist_max_rho = max.rho+0.03
 
   s = make_segments(r,b)
   dist_matrix_info <- create_distance_matrix( s, dist_choice, gamma, uninformative_BAF_threshold =uninformative_BAF_threshold, min_psi=dist_min_psi, max_psi=dist_max_psi, min_rho=dist_min_rho, max_rho=dist_max_rho)
