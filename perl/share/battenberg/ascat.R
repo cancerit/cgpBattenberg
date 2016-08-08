@@ -1058,9 +1058,9 @@ get_new_bounds = function( input_optimum_pair, ininitial_bounds ) # kjd 21-2-201
 # input: segmented LRR and BAF and the value for gamma_param
 
 #modified by kd7
-create_distance_matrix = function(s, dist_choice, gamma_param, uninformative_BAF_threshold=0.51) {
-  psi_pos = seq(1,5.4,0.05)
-  rho_pos = seq(0.1,1.05,0.01)
+create_distance_matrix = function(s, dist_choice, gamma_param, uninformative_BAF_threshold=0.51, min_rho=0.1, max_rho=1, min_psi=1, max_psi=5.4) {
+  psi_pos = seq(min_psi,max_psi,0.05) 
+  rho_pos = seq(min_rho,max_rho,0.01)
   d = matrix(nrow = length(psi_pos), ncol = length(rho_pos))
   rownames(d) = psi_pos
   colnames(d) = rho_pos
@@ -1404,24 +1404,35 @@ find_centroid_of_global_minima <- function( d, ref_seg_matrix, ref_major, ref_mi
 # distancepng: if NA: distance is plotted, if filename is given, the plot is written to a .png file
 # copynumberprofilespng: if NA: possible copy number profiles are plotted, if filename is given, the plot is written to a .png file
 # nonroundedprofilepng: if NA: copy number profile before rounding is plotted (total copy number as well as the copy number of the minor allele), if filename is given, the plot is written to a .png file
+# cnaStatusFile: File where the copy number profile status is written to. This contains either the message "No suitable copy number solution found" or "X copy number solutions found"
 #the limit on rho is lenient and may lead to spurious solutions
-runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,min.goodness=63, uninformative_BAF_threshold = 0.51) {
+runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma = 0.55, allow100percent,reliabilityFile=NA,cnaStatusFile="copynumber_solution_status.txt",min.ploidy=1.6,max.ploidy=4.8,min.rho=0.1,max.rho=1.00,min.goodness=63, uninformative_BAF_threshold = 0.51) {
   ch = chromosomes
   b = bafsegmented
   r = lrrsegmented[names(bafsegmented)]
 
   library(RColorBrewer)
+  
+  # Adapt the rho/psi boundaries for the local maximum searching below to work
+  dist_min_psi = max(min.ploidy-0.6, 0)
+  dist_max_psi = max.ploidy+0.6 
+  dist_min_rho = max(min.rho-0.03, 0.05)
+  dist_max_rho = max.rho+0.03
 
   s = make_segments(r,b)
-  dist_matrix_info <- create_distance_matrix( s, dist_choice, gamma, uninformative_BAF_threshold =uninformative_BAF_threshold)
+  dist_matrix_info <- create_distance_matrix( s, dist_choice, gamma, uninformative_BAF_threshold =uninformative_BAF_threshold, min_psi=dist_min_psi, max_psi=dist_max_psi, min_rho=dist_min_rho, max_rho=dist_max_rho)
   d = dist_matrix_info$distance_matrix
   minimise = dist_matrix_info$minimise
 
   if (!is.na(distancepng)) {
-    png(filename = distancepng, width = 1000, height = 1000, res = 1000/7)
+    pix_p_ploid = 1000 / 5
+    ploidy_single_ploid_steps = length(seq(min.ploidy, max.ploidy, by = 1))
+    pix_p_cellularity_5perc = 1000/(4*6)
+    rho_5perc_steps = (max.rho-min.rho) / 0.05
+    png(filename = distancepng, width = ploidy_single_ploid_steps*pix_p_ploid, height = rho_5perc_steps*pix_p_cellularity_5perc, res = 1000/7)
   }
 
-  par(mar = c(5,5,0.5,0.5), cex=0.75, cex.lab=2, cex.axis=2)
+  par(mar = c(5,6,0.5,5), cex=0.75, cex.lab=2, cex.axis=2)
 
   #hmcol = rev(colorRampPalette(brewer.pal(10, "RdBu"))(256))
   if(minimise){ #DCW 240314 reverse colour palette, so blue always corresponds to best region
@@ -1430,11 +1441,34 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 	hmcol = colorRampPalette(brewer.pal(10, "RdBu"))(256)
   }
 
-  image(log(d), col = hmcol, axes = F, xlab = "Ploidy", ylab = "Aberrant cell fraction")
+  image(log(d), col = hmcol, axes = F, ann = FALSE)
 
-  axis(1, at = seq(0, 4/4.4, by = 1/4.4), label = seq(1, 5, by = 1))
-  axis(2, at = seq(0, 1/1.05, by = 1/3/1.05), label = seq(0.1, 1, by = 3/10))
+  mtext(side = 1, text = "Ploidy", line = 3, padj=0, cex=1.5)
+  mtext(side = 2, text = "Purity", line = 3, padj=-0.5, cex=1.5)
 
+  # Convenience function to add the last element to the axis. We've defined a step size
+  # for the axis, but the range of values supplied doesn't always fit exactly. The lower
+  # bound of the range is always plotted by default, but we need to add the upper bound
+  # taking into account the proportions of the axis
+  add_final_axis_element = function(axis_range, axis_values, max.value) {
+    unexplained_data = max.value-max(axis_values)
+    axis_step_size = axis_range[length(axis_range)] - axis_range[length(axis_range)-1]
+    return(list(axis_range=c(axis_range, max(axis_range)+(axis_step_size*unexplained_data)), 
+                axis_values=c(axis_values, max.value)))
+  }
+  
+  # Plot the axis - axis 1
+  axis_range = seq(0, 1, by = 1/(max.ploidy-min.ploidy))
+  ploidy_range = seq(min.ploidy, max.ploidy, by = 1)
+  res = add_final_axis_element(axis_range, ploidy_range, max.ploidy)
+  axis(1, at = res$axis_range, labels = res$axis_values)
+  
+  # Axis 2
+  axis_range = seq(0, 1/max.rho, by = 1/10/(max.rho-min.rho))
+  rho_range = seq(min.rho, max.rho, by = 1/10)
+  res = add_final_axis_element(axis_range, rho_range, max.rho)
+  axis(2, at = axis_range, labels = rho_range, las=1)
+  
   #TheoretMaxdist = sum(rep(0.25,dim(s)[1]) * s[,"length"] * ifelse(s[,"b"]==0.5,0.05,1),na.rm=T)
   #DCW 180711 - try weighting BAF=0.5 equally with other points
   TheoretMaxdist = sum(rep(0.25,dim(s)[1]) * s[,"length"],na.rm=T)
@@ -1522,7 +1556,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 			goodnessOfFit = -m/TheoretMaxdist * 100 # we have to use minus to reverse d=-d above
 		}
 
-          if (ploidy > 1.6 & ploidy < 4.8 & rho >= 0.2 & goodnessOfFit > 80) {
+          if (ploidy > min.ploidy & ploidy < max.ploidy & rho >= min.rho & goodnessOfFit >= min.goodness) {
             nropt = nropt + 1
             optima[[nropt]] = c(m,i,j,ploidy,goodnessOfFit)
             localmin[nropt] = m
@@ -1533,6 +1567,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
   }
 
   if (nropt>0) {
+    write.table(paste(nropt, " copy number solutions found", sep=""), file=cnaStatusFile, quote=F, col.names=F, row.names=F)
     optlim = sort(localmin)[1]
     for (i in 1:length(optima)) {
       if(optima[[i]][1] == optlim) {
@@ -1543,9 +1578,17 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
         }
         ploidy_opt1 = optima[[i]][4]
         goodnessOfFit_opt1 = optima[[i]][5]
-        points((psi_opt1-1)/4.4,(rho_opt1-0.1)/0.95,col="green",pch="X", cex = 2)
+        range.ploidy = max.ploidy - min.ploidy
+        range.rho = max.rho - min.rho
+        points((psi_opt1-min.ploidy)/range.ploidy, (rho_opt1-min.rho)/range.rho, col="green", pch="X", cex = 2)
       }
     }
+  } else {
+    write.table(paste("no copy number solutions found", sep=""), file=cnaStatusFile, quote=F, col.names=F, row.names=F)
+    print("No suitable copy number solution found")
+    psi = NA
+    ploidy = NA
+    rho = NA
   }
 
   if (!is.na(distancepng)) {
@@ -1680,7 +1723,7 @@ runASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, dist_choi
 # notice that: gamma_param = 0.55
 
 
-run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, segBAF.table, input_optimum_pair, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma_param, read_depth, uninformative_BAF_threshold, allow100percent, reliabilityFile=NA) # kjd 10-1-2014
+run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, segBAF.table, input_optimum_pair, dist_choice, distancepng = NA, copynumberprofilespng = NA, nonroundedprofilepng = NA, gamma_param, read_depth, uninformative_BAF_threshold, allow100percent, reliabilityFile=NA, psi_min_initial=1.0, psi_max_initial=5.4, rho_min_initial=0.1, rho_max_initial=1.05) # kjd 10-1-2014
 {
 
   siglevel_BAF = 0.05 # kjd 21-2-2014
@@ -1696,12 +1739,6 @@ run_clonal_ASCAT = function(lrr, baf, lrrsegmented, bafsegmented, chromosomes, s
   #DCW 160314 - much more lenient logR thresholds (allow anything!)
   siglevel_LogR = -0.01
   maxdist_LogR = 1
-
-
-  psi_min_initial = 1.0
-  psi_max_initial = 5.4
-  rho_min_initial = 0.1
-  rho_max_initial = 1.05
 
   ininitial_bounds = list( psi_min = psi_min_initial, psi_max = psi_max_initial, rho_min = rho_min_initial, rho_max = rho_max_initial )
 
