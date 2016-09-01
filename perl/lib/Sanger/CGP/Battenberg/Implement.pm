@@ -107,6 +107,7 @@ const my $SEGMENT_VCF_TABIX => q{%s_logR_Baf_segmented.vcf.gz.tbi};
 const my $CN_VCF => q{%s_battenberg_cn.vcf};
 const my $CN_VCF_GZ => q{%s_battenberg_cn.vcf.gz};
 const my $CN_VCF_TABIX => q{%s_battenberg_cn.vcf.gz.tbi};
+const my $STATUS_TXT => q{%s_copynumber_solution_status.txt};
 
 const my $RSCRIPT => q{Rscript};
 const my $IMPUTE_EXE => q{impute2};
@@ -468,9 +469,83 @@ sub battenberg_fitcopyno{
 												$options->{'min_rho'},
 												$options->{'min_goodness'},
 											);
+  if(exists($options->{'new_chr'}) && defined($options->{'new_chr'})){
+    my ($rho, $psi) = _calc_rho_psi_from_subclones_file($options);
+    #put rho and psi in the params.
+    $options->{'psi'} = $psi;
+    $options->{'rho'} = $rho;
+  }
 
+  if (exists ($options->{'rho'}) && defined($options->{'rho'})){
+    #Sanity checks for psi and rho
+    if ($options->{'rho'} < $options->{'min_rho'} || $options->{'rho'} > $options->{'max_rho'}) {
+      die("Invalid value for rho (" . $options->{'rho'} . "). This should be in the range specified by min_rho (" . $options->{'min_rho'} . ") and max_rho (" . $options->{'max_rho'} . ")");
+    }
+    if ($options->{'psi'} < $options->{'min_ploidy'} || $options->{'psi'} > $options->{'max_ploidy'}) {
+      die("Invalid value for ploidy (" . $options->{'psi'} . "). This should be in the range specified by min_ploidy (" . $options->{'min_ploidy'} . ") and max_ploidy (" . $options->{'max_ploidy'} . ")");
+    }
+
+    $command .= ' '. $options->{'rho'};
+    $command .= ' ' . $options->{'psi'};
+  }
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub _calc_rho_psi_from_subclones_file {
+  my ($options) = @_;
+
+  my $tmp = $options->{'tmp'};
+  my $new_chr = $options->{'new_chr'};
+  my $new_pos = $options->{'new_pos'};
+  my $min_cn = $options->{'new_min_cn'};
+  my $maj_cn= $options->{'new_maj_cn'};
+
+  #Get the subclones file.
+  my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+  die("Could not locate subclones.txt file '$subcl_txt'.") unless(-e $subcl_txt);
+  #open and find the appropriate line
+  my $FH;
+  my $ref_baf;
+  my $log_r_ref;
+  open($FH,'<',$subcl_txt) || die("Error trying to read subclones file '$subcl_txt' :$!");
+  while(<$FH>){
+    my $line = $_;
+    next if($line =~ m/\s*chr/);
+    chomp($line);
+    my ($row_no,$chr,$start,$stop,$BAF,$unused,$LogR,undef) = split(/\t/,$line);
+    if($chr eq $new_chr && $new_pos >= $start && $new_pos <= $stop) {
+      $ref_baf = $BAF;
+      $log_r_ref = $LogR;
+      warn Dumper($chr,$start,$stop,$ref_baf,$log_r_ref);
+      last;
+    }
+
+  }
+  close($FH) || die("Error trying to close subclones file '$subcl_txt' :$!");
+
+  die("Unable to find location ($new_chr:$new_pos) in subclones file $subcl_txt") unless (defined $ref_baf);
+  #refChromosome and refPosition should be used to obtain refBAF for the segment containing this chr & position,
+  #i.e. from the subclones file find the row that has refChromosome in column 1,
+  #refPosition between col2 and col3 and take the value in col 4
+
+  #use the information to calculate psi and rho.
+  #The conversion formulae you need are:
+  #rho = (2*refBAF-1)/(2*refBAF-refBAF*(refMajor+refMinor)-1+refMajor)
+  #psi = (rho*(refMajor+refMinor)+2-2*rho)/(2^(LogRref/gamma))
+  #psit = (psi-2*(1-rho))/rho
+  my $gamma = 1;
+  my $rho = (2 * $ref_baf - 1) / (2 * $ref_baf - $ref_baf * ($maj_cn+$min_cn) - 1 + $maj_cn);
+  my $psi_tmp = ($rho * ($maj_cn + $min_cn) + 2 - 2*$rho)/(2**($log_r_ref/$gamma));
+  my $psi = ($psi_tmp-2*(1-$rho))/$rho;
+
+  #Remove the unrequired values from the params hash.
+  delete $options->{'new_chr'};
+  delete $options->{'new_pos'};
+  delete $options->{'new_min_cn'};
+  delete $options->{'new_maj_cn'};
+
+  return($rho, $psi);
 }
 
 sub battenberg_callsubclones{
@@ -686,19 +761,12 @@ sub battenberg_finalise{
                 if (-e $normal) {
                         _copy_file($normal,$normal_copy);
                 }
-
     tmp_to_outdir($tmp, $outdir, $tumour_name,
                   $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
                   $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $RHO_PSI_FILE,
-                  $NORMAL_CONTAMINATION_FILE, $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT);
+                  $NORMAL_CONTAMINATION_FILE, $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT, $STATUS_TXT);
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
-	}
-	#Lastly move the logs file
-	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['move_log_dir',0]}) == 0){
-			move ($options->{'logs'},File::Spec->catdir($outdir,'logs'))
-      	|| die "Error trying to move logs directory '$options->{logs}' -> '".File::Spec->catdir($outdir,'logs')."': $!";
-		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['move_log_dir',0]});
 	}
   return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'),0);
 }
@@ -757,8 +825,11 @@ sub battenberg_cleanup{
 	# uncoverable subroutine
 	my $options = shift;
   my $tmp = $options->{'tmp'};
+  my $outdir = $options->{'outdir'};
+  move ($options->{'logs'},File::Spec->catdir($outdir,'logs')) || die "Error trying to move logs directory '$options->{logs}' -> '".File::Spec->catdir($outdir,'logs')."': $!";
+
   #delete the entire tmp directory
-	remove_tree ($tmp);
+	remove_tree ($tmp) if(-e $tmp);
 	return;
 }
 
@@ -900,7 +971,7 @@ sub _targzFileSet{
 	my $tmp = $options->{'tmp'};
 	my $dir = File::Spec->catdir($options->{'tmp'},$folder_name);
 	if(! -e $dir){
-		mkdir($dir) or croak("Error trying to make directory $dir\n");
+		mkdir($dir) or die("Error trying to make directory $dir\n");
 	}
 	#Iterate through each file and copy into the folder.
 	foreach my $file_to_cp(@$fileList){
@@ -941,14 +1012,14 @@ sub _extractRhoPsiFromFile{
   my ($name,$rho,$psi);
   my $file_path = File::Spec->catfile($tmp,sprintf($RHO_PSI_FILE,$sample_name));
 	my $FH;
-	open($FH,'<',$file_path) or croak("Error trying to read rho_psi_file '$file_path': $!");
+	open($FH,'<',$file_path) or die("Error trying to read rho_psi_file '$file_path': $!");
 		while(<$FH>){
 			my $line = $_;
 			next unless($line =~ m/^FRAC_GENOME/);
 			chomp($line);
 			($name,$rho,$psi,undef) = split(/\t/,$line);
 		}
-	close($FH) or croak("Error trying to close rho_psi_file '$file_path': $!");
+	close($FH) or die("Error trying to close rho_psi_file '$file_path': $!");
 	return ($rho,$psi);
 
 }

@@ -119,7 +119,7 @@ my %index_max = ( 'allelecount' => -1,
 
 	if(!exists $options->{'process'} || $options->{'process'} eq 'finalise'){
 		Sanger::CGP::Battenberg::Implement::battenberg_finalise($options);
-		Sanger::CGP::Battenberg::Implement::battenberg_cleanup($options);
+		Sanger::CGP::Battenberg::Implement::battenberg_cleanup($options) unless($options->{'noclean'} == 1);
 	}
 }
 
@@ -152,6 +152,12 @@ sub setup {
 					'xp|max-ploidy=f' => \$opts{'max_ploidy'},
 					'mr|min-rho=f' => \$opts{'min_rho'},
 					'mg|min-goodness-of-fit=f' => \$opts{'min_goodness'},
+          'rho|purity=f' => \$opts{'rho'},
+          'psi|ploidy=f' => \$opts{'psi'},
+          'ch|new_chr=s' => \$opts{'new_chr'},
+          'po|new_pos=s' => \$opts{'new_pos'},
+          'ic|new_min_cn=s' => \$opts{'new_min_cn'},
+          'ac|new_maj_cn=s' => \$opts{'new_maj_cn'},
 					'rs|species=s' => \$opts{'species'},
           'ra|assembly=s' => \$opts{'assembly'},
           'pr|protocol=s' => \$opts{'protocol'},
@@ -160,10 +166,15 @@ sub setup {
           'ge|gender=s' => \$opts{'gender'},
           'gl|genderloci=s' => \$opts{'genderloci'},
           'j|jobs' => \$opts{'jobs'},
+          'nc|noclean' => \$opts{'noclean'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
   pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
+
+  if(!defined($opts{'noclean'})){
+    $opts{'noclean'} = 0;
+  }
 
   # then check for no args:
   my $defined;
@@ -286,6 +297,26 @@ sub setup {
 	}else{
 		$opts{'is_male'} = 'FALSE';
 	}
+
+  #If either psi or rho are defined, then both must be defined
+  if (defined $opts{'psi'} | defined $opts{'rho'}) {
+    unless (defined $opts{'rho'} & defined $opts{'psi'}) {
+      die "ERROR: Please define values for purity and ploidy\n";
+    }
+  }
+
+  #If any of these are defined, then all must be defined
+  if (defined($opts{'new_chr'}) | defined($opts{'new_pos'}) | defined($opts{'new_min_cn'}) | defined($opts{'new_maj_cn'})) {
+    unless (defined($opts{'new_chr'}) & defined($opts{'new_pos'}) & defined($opts{'new_min_cn'}) & defined($opts{'new_maj_cn'})) {
+      die "ERROR: Please define values for new_chr, new_pos, new_min_cn and new_maj_cn\n";
+    }
+  }
+
+  #Check we have only been supplied ploidy and purity OR new_chr, new_pos, new_min_cn, new_maj_cn
+  if (defined $opts{'psi'} && defined($opts{'new_chr'})) {
+    die "ERROR: Please define either ploidy and purity OR new_chr, new_pos, new_min_cn, new_maj_cn\n";
+  }
+
 
 	#Setup default values if they're not set at commandline
 
