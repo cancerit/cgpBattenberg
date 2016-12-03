@@ -38,6 +38,7 @@ WriteMakefile(
                      'Const::Fast' => 0.014,
                      'Try::Tiny' => 0.22,
                      'Bio::DB::HTS' => 2.0,
+                     'Archive::Extract' => 0.34,
                    }
 );
 
