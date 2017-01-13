@@ -1,4 +1,7 @@
-#!/usr/bin/perl
+#!/software/perl-5.16.2/bin/perl
+
+#HACK do not commit this!
+##!/usr/bin/perl
 
 ##########LICENCE##########
 # Copyright (c) 2014-2016 Genome Research Ltd.
