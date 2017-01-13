@@ -56,7 +56,7 @@ const my $HAPLOTYPE_BAF => q{ %s/RunGetHaplotypedBAFs.R %s %s %s %s_alleleFreque
 const my $PLOT_HAPLOTYPE_BAFS => q{ %s/PlotHaplotypedData.R %s %s %d %s_chr%d_heterozygousMutBAFs_haplotyped.txt %s};
 const my $COMBINE_BAFS => q{ %s/CombineBAFfiles.R %s %s %s %s_chr _heterozygousMutBAFs_haplotyped.txt %s_allChromosomes_heterozygousMutBAFs_haplotyped.txt};
 const my $SEGMENT_PHASED => q{ %s/segmentBAFphased.R %s %s %d %d};
-const my $FIT_COPY_NUMBER => q{ %s/FitCopyNumber.R %s %s %s_ %d %d %f %d %f %f %f %f %f};
+const my $FIT_COPY_NUMBER => q{ %s/FitCopyNumber.R %s %s %s_ %d %d %f %d %f %f %f %f};
 const my $CALL_SUBCLONES => q{ %s/callSubclones.R %s %s %s %s %d %d};
 
 const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d.txt};
@@ -466,7 +466,6 @@ sub battenberg_fitcopyno{
 												$options->{'min_ploidy'},
 												$options->{'max_ploidy'},
 												$options->{'min_rho'},
-												$options->{'max_rho'},
 												$options->{'min_goodness'},
 											);
 
