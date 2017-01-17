@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: CancerIT <cgpit@sanger.ac.uk>
 #
@@ -122,11 +122,9 @@ else
   fi
 fi
 
-## grab cpanm:
-
-curl -sSLO http://xrl.us/cpanm
-mv cpanm $INIT_DIR/perl/bin/.
-chmod +x $INIT_DIR/perl/bin/cpanm
+## cpanm will have been installed by the pre-requisites:
+CPANM=`which cpanm`
+echo $CPANM
 
 perlmods=( "File::ShareDir" "File::ShareDir::Install" )
 
