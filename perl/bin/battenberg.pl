@@ -1,7 +1,4 @@
-#!/software/perl-5.16.2/bin/perl
-
-#HACK do not commit this!
-##!/usr/bin/perl
+#!/usr/bin/perl
 
 ##########LICENCE##########
 # Copyright (c) 2014-2016 Genome Research Ltd.
@@ -59,6 +56,7 @@ const my $DEFAULT_ASCAT_DIST=>1;
 const my $DEFAULT_MIN_PLOIDY=>1.6;
 const my $DEFAULT_MAX_PLOIDY=>4.8;
 const my $DEFAULT_MIN_RHO=>0.1;
+const my $DEFAULT_MAX_RHO=>1.0;
 const my $DEFAULT_MIN_GOODNESS_OF_FIT=>0.63;
 const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
 const my $DEFAULT_PROTOCOL => 'WGS';
@@ -154,6 +152,7 @@ sub setup {
 					'mp|min-ploidy=f' => \$opts{'min_ploidy'},
 					'xp|max-ploidy=f' => \$opts{'max_ploidy'},
 					'mr|min-rho=f' => \$opts{'min_rho'},
+          'xr|max-rho=f' => \$opts{'max_rho'},
 					'mg|min-goodness-of-fit=f' => \$opts{'min_goodness'},
           'rho|purity=f' => \$opts{'rho'},
           'psi|ploidy=f' => \$opts{'psi'},
@@ -333,6 +332,7 @@ sub setup {
 	$opts{'min_ploidy'} = $DEFAULT_MIN_PLOIDY if(!exists($opts{'min_ploidy'}) || !defined($opts{'min_ploidy'}));
 	$opts{'max_ploidy'} = $DEFAULT_MAX_PLOIDY if(!exists($opts{'max_ploidy'}) || !defined($opts{'max_ploidy'}));
 	$opts{'min_rho'} = $DEFAULT_MIN_RHO if(!exists($opts{'min_rho'}) || !defined($opts{'min_rho'}));
+  $opts{'max_rho'} = $DEFAULT_MAX_RHO if(!exists($opts{'max_rho'}) || !defined($opts{'max_rho'}));
 	$opts{'min_goodness'} = $DEFAULT_MIN_GOODNESS_OF_FIT if(!exists($opts{'min_goodness'}) || !defined($opts{'min_goodness'}));
 
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
@@ -378,6 +378,7 @@ battenberg.pl [options]
     -min-ploidy            -mp  Min ploidy [1.6]
     -max-ploidy            -xp  Max ploidy [4.8]
     -min-rho               -mr  Min Rho [0.1]
+    -max-rho               -xr  Max Rho [1.0]
     -min-goodness-of-fit   -mg  Min goodness of fit [0.63]
     -species               -rs  Reference species []
     -assembly              -ra  Reference assembly []
@@ -506,6 +507,10 @@ Optional battenberg input Max ploidy
 =item B<-min-rho>
 
 Optional battenberg input Min Rho
+
+=item B<-max-rho>
+
+Optional battenberg input Max Rho
 
 =item B<-min-goodness-of-fit>
 
