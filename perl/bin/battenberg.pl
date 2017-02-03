@@ -39,7 +39,8 @@ use File::Copy;
 use PCAP::Cli;
 use Sanger::CGP::Battenberg::Implement;
 
-const my @VALID_PROCESS => qw( allelecount baflog imputefromaf
+const my @VALID_PROCESS => qw( splitlocifiles allelecount concatallelecount
+                              baflog imputefromaf
 															impute combineimpute haplotypebafs
 															cleanuppostbaf plothaplotypes combinebafs
 															segmentphased fitcn subclones finalise );
@@ -62,7 +63,11 @@ const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
 const my $DEFAULT_PROTOCOL => 'WGS';
 const my $DEFAULT_PLATFORM => 'ILLUMINA';
 
-my %index_max = ( 'allelecount' => -1,
+const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
+
+my %index_max = ( 'splitlocifiles' => 1,
+                  'allelecount' => -1,
+                  'concatallelecount' => 1,
 									'baflog' => 1,
 									'imputefromaf' => -1,
 									'impute' => -1,
@@ -94,7 +99,15 @@ my %index_max = ( 'allelecount' => -1,
 	$threads->add_function('battenberg_plothaplotypes', \&Sanger::CGP::Battenberg::Implement::battenberg_plothaplotypes);
 
   #Now the single processes built into the battenberg flow in order of execution.
-  $threads->run(($options->{'job_count'}*2), 'battenberg_allelecount', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'allelecount');
+	Sanger::CGP::Battenberg::Implement::battenberg_splitlocifiles($options) if(!exists $options->{'process'} || $options->{'process'} eq 'splitlocifiles');
+
+  if(!exists $options->{'process'} || $options->{'process'} eq 'allelecount') {
+    my $jobs = $options->{'num_loci_files'} * 2;
+    $jobs = $options->{'limit'} if(exists $options->{'limit'} && defined $options->{'limit'});
+    $threads->run($jobs, 'battenberg_allelecount', $options);
+  }
+
+	Sanger::CGP::Battenberg::Implement::battenberg_concat_allelecount($options) if(!exists $options->{'process'} || $options->{'process'} eq 'concatallelecount');
 
 	Sanger::CGP::Battenberg::Implement::battenberg_runbaflog($options) if(!exists $options->{'process'} || $options->{'process'} eq 'baflog');
 
@@ -134,6 +147,7 @@ sub setup {
 					'nb|normbam=s' => \$opts{'normbam'},
 					't|threads=i' => \$opts{'threads'},
 					'i|index=i' => \$opts{'index'},
+          'x|limit=i' => \$opts{'limit'},
 					'p|process=s' => \$opts{'process'},
 					'u|thousand-genomes-loc=s' => \$opts{'1kgenloc'},
 					'r|reference=s' => \$opts{'reference'},
@@ -167,8 +181,9 @@ sub setup {
           'a|allele-counts=s' => \$opts{'allele-counts'},
           'ge|gender=s' => \$opts{'gender'},
           'gl|genderloci=s' => \$opts{'genderloci'},
-          'j|jobs' => \$opts{'jobs'},
+          'j|jobs' => \$opts{'jobs'}, #query how many jobs are required for this step
           'nc|noclean' => \$opts{'noclean'},
+          'nl|num_loci_files=i' => \$opts{'num_loci_files'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
@@ -229,6 +244,7 @@ sub setup {
 
 	delete $opts{'process'} unless(defined $opts{'process'});
   delete $opts{'index'} unless(defined $opts{'index'});
+  delete $opts{'limit'} unless(defined $opts{'limit'});
 
   if(defined $opts{'gender'}){
     pod2usage(-message => 'unknown gender value: '.$opts{'gender'}, -verbose => 1) unless(first {$_ eq $opts{'gender'}} @VALID_GENDERS);
@@ -251,13 +267,30 @@ sub setup {
   my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
   $opts{'job_count'} = $no_of_jobs;
 
+  #Set number of loci files to be the number of chromosomes if not set
+  my $loci_files_defined = 1;
+  if(!exists($opts{'num_loci_files'}) || !defined($opts{'num_loci_files'})) {
+    $opts{'num_loci_files'} = $no_of_jobs;
+    $loci_files_defined = 0;
+  }
+
 	if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
 
     my $jobs = 1;
     if(exists $opts{'process'} && defined $opts{'process'}) {
       if($opts{'process'} eq 'allelecount') {
-        $jobs = $no_of_jobs*2;
+
+        #If defined num_loci_files, check it is the same as the number of split files
+        if ($loci_files_defined) {
+          my $split_name = File::Spec->catfile($tmpdir, sprintf $SPLIT_LOCI_ALL_GLOB);
+          my @split_files = glob($split_name);
+          if (@split_files != $opts{'num_loci_files'}) {
+            pod2usage(-msg  => "\nERROR: Number of num_loci_files (" . $opts{'num_loci_files'} . ") does not equal the number of split files found (" . @split_files . ")\n", -verbose => 1,  -output => \*STDERR);
+          }
+        }
+        $jobs = $opts{'num_loci_files'}*2;
+        #$jobs = $no_of_jobs*2;
       }
       elsif(first {$opts{'process'} eq $_} (qw(imputefromaf impute combineimpute haplotypebafs cleanuppostbaf plothaplotypes))) {
         $jobs = $no_of_jobs;
@@ -270,11 +303,17 @@ sub setup {
 
     if(exists $opts{'index'}) {
       my $max = $index_max{$opts{'process'}};
-      $max = $jobs if($max==-1);
+      if ($max == -1) {
+        if (exists $opts{'limit'}) {
+          $max = $opts{'limit'};
+        } else {
+          $max = $jobs;
+        }
+      }
 
       die "ERROR: based on reference and exclude option index must be between 1 and $max\n" if($opts{'index'} < 1 || $opts{'index'} > $max);
-      PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
 
+      PCAP::Cli::opt_requires_opts('index', \%opts, ['process']);
       die "No max has been defined for this process type\n" if($max == 0);
 
       PCAP::Cli::valid_index_by_factor('index', $opts{'index'}, $max, 1);
@@ -388,6 +427,12 @@ battenberg.pl [options]
     -max-ploidy            -xp  Max ploidy [4.8]
     -min-rho               -mr  Min Rho [0.1]
     -max-rho               -xr  Max Rho [1.0]
+    -purity                -rho Purity value
+    -ploidy                -psi Ploidy value
+    -new_chr               -ch  Segment chromsome
+    -new_pos               -po  Segment position
+    -new_min_cn            -ic  Segment minor copy number
+    -new_maj_cn            -ac  Segment major copy number
     -min-goodness-of-fit   -mg  Min goodness of fit [0.63]
     -species               -rs  Reference species []
     -assembly              -ra  Reference assembly []
@@ -401,9 +446,11 @@ battenberg.pl [options]
     -logs              -g   Location to write logs (default is ./logs)
 
    Targeted processing (further detail under OPTIONS):
-    -process  -p  Only process this step then exit, optionally set -index
-    -index    -i  Optionally restrict '-p' to single job
-    -jobs     -j  Declare with -p to determine how many jobs are needed for this step
+    -process        -p  Only process this step then exit, optionally set -index
+    -index          -i  Optionally restrict '-p' to single job
+    -limit          -x  Specifying 2 will balance processing between '-i 1 & 2'
+    -jobs           -j  Declare with -p to determine how many jobs are needed for this step
+    -num_loci_files -nl Split the 1000genomes loci files into this many files. Defining a value less than the number of loci files will have no effect.
 
    Other:
     -help     -h  Brief help message.
@@ -477,7 +524,7 @@ Directory containing the 1000genomes loci data
 
 Location of the prob_loci.txt file
 
-=item B< -min-bq-allcount>
+=item B<-min-bq-allcount>
 
 Minimum base quality of alleles to be counted in allele counting step
 
@@ -525,6 +572,22 @@ Optional battenberg input Max Rho
 
 Optional battenberg input Min goodness of fit
 
+=item B<-ploidy>
+
+=item B<-purity>
+
+Optional battenberg input Ploidy and Purity. Both must be defined. May not be used with -new_chr, -new_pos, -new_minor_cn and -new_major_cn.
+
+=item B<-new_chr>
+
+=item B<-new_pos>
+
+=item B<-new_minor_cn>
+
+=item B<-new_major_cn>
+
+Optional battenberg input Chromosome, Position, Minor copy number and Major copy number of the segment to use for new ploidy/purity values. All must be defined. May not be used with -ploidy and -purity.
+
 =item B<-species>
 
 Reference species (default: Human)
@@ -554,7 +617,9 @@ Location to write logs (default is ./logs)
 
 Only process this step then exit, optionally set -index.  The order of steps is as follows:
 
+    splitlocifiles
     allelecount *
+    concatallelecount
     baflog
     imputefromaf *
     impute *
@@ -577,6 +642,10 @@ Only process this step then exit, optionally set -index.  The order of steps is 
 =item B<-index>
 
 Optionally restrict '-p' to single job
+
+=item B<-num_loci_files>
+
+Splitting the number of thousand genome loci files into a larger number of smaller files gives the ability to run more allelecount jobs in parallel. (default is the requested number of chromosomes)
 
 =back
 

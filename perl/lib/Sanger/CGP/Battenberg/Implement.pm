@@ -37,6 +37,7 @@ use File::Copy qw(copy move);
 use FindBin qw($Bin);
 use List::Util qw(first);
 use Vcf;
+use POSIX qw(ceil);
 
 use File::ShareDir qw(module_dir);
 
@@ -117,6 +118,17 @@ const my $IMPUTE_OUTPUT => q{%s_impute_output_chr%d.txt};
 
 const my $ALLELE_COUNT_PARA => ' -b %s -o %s -l %s ';
 
+#thousand genomes loci files
+const my $ONEKGEN_LOCI_FILE_PATTERN => q{1000genomesloci2012_chr*.txt};
+const my $ONEKGEN_LOCI_FILE_REGEX => q{1000genomesloci2012_chr(\w+).txt};
+const my $SPLIT_LOCI_GLOB => q{1000genomesloci2012_chr*_split%d.txt};
+const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
+const my $SPLIT_LOCI_REGEX => q{1000genomesloci2012_chr(\w+)_split};
+const my $SPLIT_ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d_split%d.txt};
+const my $SPLIT_ALLELE_COUNT_OUTPUT_GLOB => q{*_alleleFrequencies_chr*_split*.txt};
+const my $SPLIT_ALLELE_COUNT_OUTPUT_REGEX => q{(.*)_alleleFrequencies_chr(\w+)_split(\d+).txt};
+
+
 const my @BATTENBERG_RESULT_FILES => qw(
 																					%s_Tumor.png
 																					%s_Germline.png
@@ -153,40 +165,81 @@ sub prepare {
   return 1;
 }
 
-sub battenberg_allelecount{
-	# uncoverable subroutine
-	my ($index, $options) = @_;
-	return 1 if(exists $options->{'index'} && $index != $options->{'index'});
+sub battenberg_splitlocifiles {
+	my $options = shift;
 	my $tmp = $options->{'tmp'};
-	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+	my $thou_gen_loc = File::Spec->rel2abs($options->{'1kgenloc'});
+  my $requested_num_loci_files = $options->{'num_loci_files'};
+  my $ignored_contigs = $options->{'ignored_contigs'};
 
-	my $k_gen_loc = File::Spec->rel2abs($options->{'1kgenloc'});
+	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 
-	#A little sorting so we get all allele counting done in parallel (we have 2 * no of contigs threads)
-  my $input = $options->{'tumbam'};
-  my $sname = $options->{'tumour_name'};
-	my $lookup = $index;
-
-	if($index>$options->{'job_count'}){
-		$lookup = $index - $options->{'job_count'};
-		$input = $options->{'normbam'};
-		$sname = $options->{'normal_name'};
-	}
-
-	my $loci_file = File::Spec->catfile($k_gen_loc,sprintf($ALLELE_LOCI_NAME,$lookup));
-	PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
-	my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$lookup)));
-
+  #No need to split if allele-counts parameter is set
+  #(reading pre-calcuated allelecounter files)
 	if(exists $options->{'allele-counts'} && defined $options->{'allele-counts'}) {
-	  unless($index == 1) {
-	    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+    return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  }
+
+  my $num_loci_files = $requested_num_loci_files;
+
+  #Find the number of loci (lines) in each file and the grand total
+  my ($loci_per_file, $total_loci_remaining) = _find_num_loci_per_file($thou_gen_loc, $ignored_contigs);
+
+  #Average number of loci (lines) in a split file
+  my $num_loci_per_split = $total_loci_remaining / $num_loci_files;
+
+  my $total_number_of_split_files_created = 0;
+
+  foreach my $file (keys %$loci_per_file) {
+
+    #Check if we are at the last file
+    my $number_of_split_files_for_chr;
+    if ($total_loci_remaining == $loci_per_file->{$file}) {
+      #Set last file to be what is left
+      $number_of_split_files_for_chr = $requested_num_loci_files - $total_number_of_split_files_created;
+    } else {
+      $number_of_split_files_for_chr = int($loci_per_file->{$file} / $num_loci_per_split);
+    }
+
+    #Must have each file at least once
+    if ($number_of_split_files_for_chr == 0) {
+      $number_of_split_files_for_chr = 1;
+    }
+    #print "file=$file " . $loci_per_file->{$file} . " $number_of_split_files_for_chr $total_number_of_split_files_created\n";
+
+    #Write split loci files to the tmpdir
+    _create_split_files($file, $loci_per_file->{$file}, $number_of_split_files_for_chr, $tmp, $total_number_of_split_files_created);
+
+    #Keep track of the total number of files created
+    $total_number_of_split_files_created += $number_of_split_files_for_chr;
+
+    #Need to keep refining the answer to avoid problems with rounding
+    if ($num_loci_files > $number_of_split_files_for_chr) {
+      $num_loci_per_split = ($total_loci_remaining -= $loci_per_file->{$file}) / ($num_loci_files -= $number_of_split_files_for_chr);
+    }
+  }
+
+  if ($total_number_of_split_files_created != $requested_num_loci_files) {
+    die("The number of loci files created $total_number_of_split_files_created is not the same as the number requested $num_loci_files\n");
+  }
+  return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub battenberg_allelecount {
+	# uncoverable subroutine
+	my ($index_in, $options) = @_;
+	return 1 if(exists $options->{'index'} && $index_in != $options->{'index'});
+	my $tmp = $options->{'tmp'};
+
+  #Unpack the allele counts tar file if it exists and return
+	if(exists $options->{'allele-counts'} && defined $options->{'allele-counts'}) {
+	  unless ($index_in == 1) {
 	    return 1;
 	  }
-
 	  # expand the file and put the data in the expected locations
 	  my $command = sprintf 'tar -C %s -zxf %s', $tmp, $options->{'allele-counts'};
 
-	  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
+	  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index_in);
 
 	  # then they have to be renamed:
 	  # %s_alleleFrequencies_chr%d.txt
@@ -202,22 +255,157 @@ sub battenberg_allelecount{
   	  }
   	}
 	  remove_tree(File::Spec->catdir($tmp, $options->{'tumour_name'}));
-	}
-  else {
+    return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index_in);
+  }
+
+  #####
+  #Run allelecounter program
+  #####
+  my $reference = $options->{'reference'};
+  my $mbq =  $options->{'mbq'};
+  my $num_loci_files = $options->{'num_loci_files'};
+
+  my @indices = limited_indices($options, $index_in, $num_loci_files*2);
+  for my $index(@indices) {
+    my $sample_name = $options->{'tumour_name'};
+    my $sample_bam = $options->{'tumbam'};
+    my $file_index = $index;
+    if($index > $num_loci_files) {
+      $sample_name = $options->{'normal_name'};
+      $sample_bam = $options->{'normbam'};
+      $file_index = $index - $num_loci_files;
+    }
+
+    #Skip if this job has already been successfully run
+    next if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
+
+    my $loci_file;
+    my $alleleCountOut;
+    my $split_name = File::Spec->catfile($tmp, sprintf $SPLIT_LOCI_GLOB, $file_index);
+    my @split_files = glob($split_name);
+
+    #Found split file
+    if (@split_files > 0) {
+      #Should only find one
+      if (@split_files > 1) {
+        die("Found more than one file for index $index\n");
+      }
+      $loci_file = shift @split_files;
+      my ($chr) = $loci_file =~ /$SPLIT_LOCI_REGEX/;
+      $alleleCountOut = File::Spec->catfile($tmp, sprintf $SPLIT_ALLELE_COUNT_OUTPUT, $sample_name, $chr, $file_index);
+    } else {
+      my $k_gen_loc = File::Spec->rel2abs($options->{'1kgenloc'});
+
+      #Get the appropriate loci file based on the index into the contigs array rather than the number
+      #of requested contigs
+      my $loci_names_to_index = _lociNameMap($k_gen_loc);
+      my $contigs = read_contigs_from_file_with_ignore($options->{'reference'},$options->{'ignored_contigs'});
+      my $this_contig = $contigs->[$file_index-1];
+      my $file_index = $loci_names_to_index->{$this_contig};
+
+      $loci_file = File::Spec->catfile($k_gen_loc,sprintf($ALLELE_LOCI_NAME,$file_index));
+      $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sample_name,$file_index)));
+    }
+
+    PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
     my $command = _which($ALLELE_COUNT_SCRIPT) || die "Unable to find $ALLELE_COUNT_SCRIPT in path";
 
     $command .= sprintf($ALLELE_COUNT_CMD,
-                $loci_file,
-                $input,
-                $alleleCountOut,
-                $options->{'mbq'},
-                $options->{'reference'},
-                );
+                        $loci_file,
+                        $sample_bam,
+                        $alleleCountOut,
+                        $mbq,
+                        $reference,
+                       );
     PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
-	}
+    PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+  }
+}
 
-	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
+sub battenberg_concat_allelecount {
+  my ($options) = @_;
+  my $tmp = $options->{'tmp'};
 
+  #Skip if already done
+	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+
+  #No need to concatenate if allele-counts parameter is set
+  #(reading pre-calcuated allelecounter files)
+	if(exists $options->{'allele-counts'} && defined $options->{'allele-counts'}) {
+    return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  }
+
+  #Find all the loci split files
+  my $split_name = File::Spec->catfile($tmp, sprintf $SPLIT_LOCI_ALL_GLOB,);
+  my @split_files = glob($split_name);
+
+  #Return if there are no split files, so nothing to concatentate
+  unless (@split_files) {
+    return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+  }
+
+  #Find how many split files there should be for each chromosome
+  my %loci_files;
+  foreach my $loci_file (@split_files) {
+    my ($chr) = $loci_file =~ /$SPLIT_LOCI_REGEX/;
+    $loci_files{$chr}++;
+  }
+
+  #Find all the allele count files
+  my $allele_count_filenames = File::Spec->catfile($tmp, $SPLIT_ALLELE_COUNT_OUTPUT_GLOB);
+  my @allele_count_files = glob($allele_count_filenames);
+
+  my $sample_jobs;
+  foreach my $split_file (@allele_count_files) {
+    my ($basename, $path) = fileparse($split_file);
+
+    #Grab the sample name, chromosome and order from the filename
+    my ($sname, $chr, $file_cnt) = $basename =~ /$SPLIT_ALLELE_COUNT_OUTPUT_REGEX/;
+
+    #All the files with the same sample name and chromosome need concatenating together
+    my $split_file_cnt;
+    %$split_file_cnt = ('order' => $file_cnt,
+                        'file' => $split_file);
+    push @{$sample_jobs->{$sname}{$chr}}, $split_file_cnt;
+  }
+
+  foreach my $sname (keys %$sample_jobs) {
+    foreach my $contig_cnt (keys %{$sample_jobs->{$sname}}) {
+
+      #Check we have the correct number of files
+      if ($loci_files{$contig_cnt} != @{$sample_jobs->{$sname}{$contig_cnt}}) {
+        die('ERROR: The number of allele count files (' . @{$sample_jobs->{$sname}{$contig_cnt}} . ') does not equal the number of loci files (' . $loci_files{$contig_cnt} . ')');
+      }
+
+      #Create allele count file for each sample and chromosome
+      my $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sname,$contig_cnt)));
+      #Make sure any existing file is deleted before appending
+      unlink $alleleCountOut if (-e $alleleCountOut);
+
+      open my $out_fh, ">> $alleleCountOut" or die "Unable to open $alleleCountOut for writing";
+
+      my $first_file = 1;
+      foreach my $split_file (sort {$a->{'order'} <=> $b->{'order'}} @{$sample_jobs->{$sname}{$contig_cnt}}) {
+        my $filename =  $split_file->{'file'};
+        open my $in_fh, '<', $filename or die "Unable to open $filename";
+        while (my $line = <$in_fh>) {
+          #print comments of the first file, then skip for all other files
+          if ($line =~ /^#/) {
+            if ($first_file) {
+              print $out_fh $line;
+            }
+          } else {
+            #print rest of file
+            print $out_fh $line;
+          }
+        }
+        close $in_fh;
+        $first_file = 0;
+      }
+      close $out_fh;
+    }
+  }
+  return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
 
 sub battenberg_runbaflog{
@@ -787,7 +975,7 @@ sub determine_gender {
 
   my $command = _which('alleleCounter');
   $command .= sprintf $ALLELE_COUNT_PARA, $options->{'normbam'}, File::Spec->catfile($options->{'tmp'}, 'normal_gender.tsv'), $gender_loci;
-  $command .= '-m '.$options->{'mbq'} if exists $options->{'mbq'};
+  $command .= '-m '.$options->{'mbq'} if exists $options->{'mbq'} && defined $options->{'mbq'};
   system($command);
   my $norm_gender = _parse_gender_results(File::Spec->catfile($options->{'tmp'}, 'normal_gender.tsv'));
   return $norm_gender;
@@ -1089,6 +1277,117 @@ sub _which {
   $path = which($prog) unless(-e $path);
   die "Failed to find $prog in PATH or local bin folder" unless(defined $path);
   return $path;
+}
+
+sub limited_indices {
+  my ($options, $index_in, $count) = @_;
+  my @indices;
+  if(exists $options->{'limit'}) {
+    # main script checks index is not greater than limit or < 1
+    my $base = $index_in;
+    while($base <= $count) {
+      push @indices, $base;
+      $base += $options->{'limit'};
+    }
+  }
+  else {
+    push @indices, $index_in;
+  }
+  return @indices;
+}
+
+sub _find_num_loci_per_file {
+  my ($thousand_genome_loci_dir, $ignored_contigs) = @_;
+
+  #Find the number of loci (lines) in each 1000 genome file
+  my $loci_pattern = File::Spec->catfile($thousand_genome_loci_dir, $ONEKGEN_LOCI_FILE_PATTERN);
+
+  #Convert ignored_contigs array into a hash
+#  my %ignored_contigs_hash = map { $_ => 1 } @$ignored_contigs;
+  my %ignored_contigs_hash;
+  foreach my $contig (@$ignored_contigs) {
+    $contig =~ s/^chr//;
+    $ignored_contigs_hash{$contig} = 1;
+  }
+
+  my @loci_files = < $loci_pattern >;
+
+  my %lines_per_file;
+  my $total = 0;
+  foreach my $file (@loci_files) {
+    open my $fh, $file or die "Unable to open $file";
+    #check the first line for the actual chromosome name
+    my $first_line = <$fh>;
+    my ($chr, $pos) = split " ", $first_line;
+    $chr =~ s/^chr//;
+
+    #skip if we want to ignore this file
+    next if ($ignored_contigs_hash{$chr});
+
+    while ( <$fh> ) {};
+    my $count = $.;
+    $lines_per_file{$file} = $count;
+    $total += $count;
+    close $fh;
+  }
+
+  #Return the number of loci (lines) for each file and the grand total over all files
+  return (\%lines_per_file, $total);
+}
+
+sub _create_split_files {
+  my ($file, $total_loci, $number_of_split_files, $tmpdir, $first_number) = @_;
+
+  #Maximum number of lines to write in each file
+  my $number_of_split_loci = ceil($total_loci / $number_of_split_files);
+
+  my $line_count = 0;
+  my $file_count = $first_number + 1; #start counting at 1 rather than 0
+
+  #Name the split files after the parent file
+  my ($basename, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+  open my $FH, $file or die "Unable to open $file";
+
+  my $split_filename = $basename . "_split$file_count" . $suffix;
+  my $split_file = File::Spec->catfile($tmpdir, $split_filename);
+  open my $SPLIT_FH, '>', $split_file or die "Unable to open $split_file";
+
+  while (my $line = <$FH>) {
+    #Write the correct number of lines to the split file
+    if ($line_count >= $number_of_split_loci) {
+      close $SPLIT_FH;
+      $file_count++;
+      $split_file = File::Spec->catfile($tmpdir, $basename . "_split$file_count" . $suffix);
+      open $SPLIT_FH, '>', $split_file or die "Unable to open $split_file";
+      $line_count = 0;
+    }
+    print $SPLIT_FH $line;
+    $line_count++;
+  }
+
+  close $SPLIT_FH;
+  close $FH;
+}
+
+sub _lociNameMap {
+  my ($kgenloc) = @_;
+
+  my $loci_pattern = File::Spec->catfile($kgenloc, $ONEKGEN_LOCI_FILE_PATTERN);
+  my @loci_files = < $loci_pattern >;
+
+  my $loci_names_to_index;
+  foreach my $file (@loci_files) {
+    open my $fh, $file or die "Unable to open $file";
+    my ($loci_index) = $file =~ /$ONEKGEN_LOCI_FILE_REGEX/;
+    #check the first line for the actual chromosome name
+    my $first_line = <$fh>;
+    my ($chr, $pos) = split " ", $first_line;
+    $chr =~ s/^chr//;
+    $loci_names_to_index->{$chr} = $loci_index;
+
+    close $fh;
+  }
+  return $loci_names_to_index;
 }
 
 1;
