@@ -174,16 +174,15 @@ sub setup {
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
   pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
 
-  if(!defined($opts{'noclean'})){
-    $opts{'noclean'} = 0;
-  }
-
   # then check for no args:
   my $defined;
   for(keys %opts) { $defined++ if(defined $opts{$_}); }
 
 	pod2usage(-msg  => "\nERROR: Options must be defined.\n", -verbose => 2,  -output => \*STDERR) unless($defined);
 
+  if(!defined($opts{'noclean'})){
+    $opts{'noclean'} = 0;
+  }
 
   if(defined $opts{'allele-counts'}) {
     for my $bam_opt((qw(tumbam normbam))) {
