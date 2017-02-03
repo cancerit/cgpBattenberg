@@ -211,13 +211,10 @@ sub setup {
 
   PCAP::Cli::file_for_reading('impute_info.txt',$opts{'impute_info'});
 
-
-  if(defined $opts{'prob_loci'}) {
-    PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
+  unless(defined $opts{'prob_loci'}) {
+    $opts{'prob_loci'} = File::Spec->catfile(Sanger::CGP::Battenberg::Implement::get_mod_path(), 'battenberg', '/probloci.txt.gz');
   }
-  else {
-    $opts{'prob_loci'} = Sanger::CGP::Battenberg::Implement::get_mod_path().'/probloci.txt.gz';
-  }
+  PCAP::Cli::file_for_reading('prob_loci.txt',$opts{'prob_loci'});
 
 	@{$opts{'ignored_contigs'}} = ();
 	if(exists ($opts{'ignore_file'}) && defined($opts{'ignore_file'})){
