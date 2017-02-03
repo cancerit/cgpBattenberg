@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########## LICENCE ##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: CancerIT <cgpit@sanger.ac.uk>
 #
@@ -122,11 +122,9 @@ else
   fi
 fi
 
-## grab cpanm:
-
-curl -sSLO http://xrl.us/cpanm
-mv cpanm $INIT_DIR/perl/bin/.
-chmod +x $INIT_DIR/perl/bin/cpanm
+## cpanm will have been installed by the pre-requisites:
+CPANM=`which cpanm`
+echo $CPANM
 
 perlmods=( "File::ShareDir" "File::ShareDir::Install" )
 
@@ -135,7 +133,7 @@ for i in "${perlmods[@]}" ; do
   echo -n "Installing build prerequisite $i..."
   (
     set -x
-    $INIT_DIR/perl/bin/cpanm -v --mirror http://cpan.metacpan.org -l $INST_PATH $i
+    $CPANM -v --mirror http://cpan.metacpan.org -l $INST_PATH $i
     set +x
     echo; echo
   ) >>$INIT_DIR/setup.log 2>&1
@@ -151,7 +149,7 @@ if ! ( perl -MExtUtils::MakeMaker -e 1 >/dev/null 2>&1); then
 fi
 (
   set -x
-  bin/cpanm -v --mirror http://cpan.metacpan.org --notest -l $INST_PATH/ --installdeps . < /dev/null
+  $CPANM -v --mirror http://cpan.metacpan.org --notest -l $INST_PATH/ --installdeps . < /dev/null
   set +x
 ) >>$INIT_DIR/setup.log 2>&1
 done_message "" "Failed during installation of core dependencies."
