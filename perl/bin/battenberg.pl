@@ -241,6 +241,8 @@ sub setup {
 		pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
   }
 
+  PCAP::Cli::file_for_reading('reference',$opts{'reference'});
+
   my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
   $opts{'job_count'} = $no_of_jobs;
 
