@@ -193,6 +193,11 @@ sub setup {
     pod2usage(-msg  => "\nERROR: Please provide a location to write results", -verbose => 1,  -output => \*STDERR);
   }
 
+  #Create directory for writing temporary output
+	my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpBattenberg');
+	make_path($tmpdir) unless(-d $tmpdir);
+	$opts{'tmp'} = $tmpdir;
+
   if(defined $opts{'allele-counts'}) {
     for my $bam_opt((qw(tumbam normbam))) {
       if(!exists $opts{$bam_opt} || !defined $opts{$bam_opt} || $opts{$bam_opt} =~ m/[.]bam$/) {
@@ -283,9 +288,6 @@ sub setup {
 	$opts{'threads'} = 1 unless(defined $opts{'threads'});
 
 	#Create the results directory in the output directory given.
-	my $tmpdir = File::Spec->catdir($opts{'outdir'}, 'tmpBattenberg');
-	make_path($tmpdir) unless(-d $tmpdir);
-	$opts{'tmp'} = $tmpdir;
 	my $resultsdir = File::Spec->catdir($opts{'tmp'}, 'results');
 	make_path($resultsdir) unless(-d $resultsdir);
 	#directory to store progress reports
