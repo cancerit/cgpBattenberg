@@ -184,6 +184,15 @@ sub setup {
     $opts{'noclean'} = 0;
   }
 
+  #Check that outdir exists and is writable
+  if (defined $opts{'outdir'}) {
+    unless (-e $opts{'outdir'} && -w $opts{'outdir'}) {
+      pod2usage(-msg  => "\nERROR: outdir " . $opts{'outdir'} . " must exist and be writable\n", -verbose => 1,  -output => \*STDERR);
+    }
+  } else {
+    pod2usage(-msg  => "\nERROR: Please provide a location to write results", -verbose => 1,  -output => \*STDERR);
+  }
+
   if(defined $opts{'allele-counts'}) {
     for my $bam_opt((qw(tumbam normbam))) {
       if(!exists $opts{$bam_opt} || !defined $opts{$bam_opt} || $opts{$bam_opt} =~ m/[.]bam$/) {
