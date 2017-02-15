@@ -39,7 +39,7 @@ if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "  ./setup.sh /opt/myBundle"
   echo "OR all elements versioned:"
   echo "  ./setup.sh /opt/cgpBattenberg-X.X.X /opt/PCAP-X.X.X/lib/perl:/opt/alleleCount-X.X.X/lib/perl:/opt/cgpVcf-X.X.X/lib/perl"
-  exit 0
+  exit 1
 fi
 
 INST_PATH=$1
