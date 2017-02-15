@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 ##########LICENCE##########
-# Copyright (c) 2014-2016 Genome Research Ltd.
+# Copyright (c) 2014-2017 Genome Research Ltd.
 #
 # Author: Cancer Genome Project cgpit@sanger.ac.uk
 #
@@ -646,7 +646,7 @@ Optionally restrict '-p' to single job
 
 =item B<-num_loci_files>
 
-Splitting the number of thousand genome loci files into a larger number of smaller files gives the ability to run more allelecount jobs in parallel. (default is the requested number of chromosomes)
+Splitting the number of thousand genome loci files into a larger number of smaller files gives the ability to run more allelecount jobs in parallel. (default is the requested number of chromosomes). The allelecount step needs twice this number of jobs to complete.
 
 =back
 
