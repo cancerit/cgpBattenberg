@@ -41,9 +41,9 @@ script:
  - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpVcf.git
  - cd cgpVcf
  - ./setup.sh $HOME/cgpVcf-opt $HOME/PCAP-opt
-  - cd ../
-  - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/alleleCount.git
-  - cd alleleCount
-  - ./setup.sh $HOME/alleleCount-opt $HOME/cgpVcf-opt:$HOME/PCAP-opt
+ - cd ../
+ - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/alleleCount.git
+ - cd alleleCount
+ - ./setup.sh $HOME/alleleCount-opt $HOME/cgpVcf-opt:$HOME/PCAP-opt
  - cd ../
  - ./setup.sh $HOME/cgpBattenberg-opt $HOME/alleleCount-opt:$HOME/cgpVcf-opt:$HOME/PCAP-opt
