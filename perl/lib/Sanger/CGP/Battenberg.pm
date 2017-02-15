@@ -25,7 +25,7 @@ use strict;
 
 use Const::Fast qw(const);
 use base 'Exporter';
-our $VERSION = '1.5.3';
+our $VERSION = '2.0.0';
 our @EXPORT = qw($VERSION);
 
 1;
@@ -35,4 +35,3 @@ __END__
 =head1 NAME
 
 Sanger::CGP::Battenberg - Base class to house version and generic functions.
-
