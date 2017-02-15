@@ -199,10 +199,11 @@ sub setup {
     $opts{'noclean'} = 0;
   }
 
-  #Check that outdir exists and is writable
+  #Check that outdir exists and is writable. Create directory if it does not exist
   if (defined $opts{'outdir'}) {
-    unless (-e $opts{'outdir'} && -w $opts{'outdir'}) {
-      pod2usage(-msg  => "\nERROR: outdir " . $opts{'outdir'} . " must exist and be writable\n", -verbose => 1,  -output => \*STDERR);
+    make_path($opts{'outdir'}) unless(-d $opts{'outdir'});
+    unless (-w $opts{'outdir'}) {
+      pod2usage(-msg  => "\nERROR: outdir " . $opts{'outdir'} . " must be writable\n", -verbose => 1,  -output => \*STDERR);
     }
   } else {
     pod2usage(-msg  => "\nERROR: Please provide a location to write results", -verbose => 1,  -output => \*STDERR);
