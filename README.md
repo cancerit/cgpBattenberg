@@ -4,7 +4,7 @@ cgpBattenberg
 An installation helper, perl wrapper and the R program Battenberg which detects subclonality and copy number in matched NGS data.
 
 [![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=master)](https://travis-ci.org/cancerit/cgpBattenberg) : master  
-[![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=develop)](https://travis-ci.org/cancerit/cgpBattenberg) : develop
+[![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=dev)](https://travis-ci.org/cancerit/cgpBattenberg) : dev
 
 ## Installation
 
