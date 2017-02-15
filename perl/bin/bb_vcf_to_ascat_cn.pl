@@ -1,10 +1,7 @@
-#!/software/perl-5.16.2/bin/perl
-
-#HACK do not commit!!
-##!/usr/bin/perl
+#!/usr/bin/perl
 
 ##########LICENCE##########
-# Copyright (c) 2016 Genome Research Ltd.
+# Copyright (c) 2016-2017 Genome Research Ltd.
 #
 # Author: David Jones <cgpit@sanger.ac.uk>
 #
