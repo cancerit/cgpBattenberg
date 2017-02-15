@@ -68,7 +68,9 @@ set +x
 echo; echo
 
 ## cpanm will have been installed by the pre-requisites:
+set +e
 CPANM=`which cpanm`
+set -e
 echo $CPANM
 
 perlmods=( "File::ShareDir" "File::ShareDir::Install" )
@@ -88,6 +90,14 @@ if [[ "x$PCAP" == "x" ]] ; then
   echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding:"
   echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
   exit 1;
+else
+  # need the leading 'v' on versions so comparison of those that don't have hotfix element behave correctly, i.e. (X.X, rather than X.X.X)
+  GOOD_VER=`perl -Mversion -e "version->parse(q{v$PCAP}) >= version->parse(q{v}.q{1.12}) ? print qq{1\n} : print qq{0\n};"`
+  if [ $GOOD_VER -ne 1 ]; then
+    echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding (version too old):"
+    echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+    exit 1;
+  fi
 fi
 
 AC=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::AlleleCount`
