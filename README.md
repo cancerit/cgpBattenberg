@@ -3,6 +3,9 @@ cgpBattenberg
 
 An installation helper, perl wrapper and the R program Battenberg which detects subclonality and copy number in matched NGS data.
 
+[![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=master)](https://travis-ci.org/cancerit/cgpBattenberg) : master  
+[![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=dev)](https://travis-ci.org/cancerit/cgpBattenberg) : dev
+
 ## Installation
 
 Please install the following before attempting to run ``setup.sh <install_to_folder> [X/lib/perl:Y/lib/perl]``
@@ -42,7 +45,7 @@ For the most up to date usage instructions for the wrapper code please see the c
 
 LICENCE
 =======
-Copyright (c) 2014-2016 Genome Research Ltd.
+Copyright (c) 2014-2017 Genome Research Ltd.
 
 Author: Cancer Genome Project cgpit@sanger.ac.uk
 

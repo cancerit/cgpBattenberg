@@ -33,6 +33,7 @@ WriteMakefile(
   EXE_FILES     => [qw( bin/battenberg_CN_to_VCF.pl
                         bin/battenberg.pl
                         bin/battenberg_version.pl
+                        bin/bb_vcf_to_ascat_cn.pl
                         bin/download_generate_bberg_ref_files.pl)],
   PREREQ_PM     => {
                      'Const::Fast' => 0.014,

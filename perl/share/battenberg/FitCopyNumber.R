@@ -119,8 +119,9 @@ if(use_preset_rho_psi){
 	distance.outfile=paste(start.file,"distance.png",sep="",collapse="") # kjd 20-2-2014
 	copynumberprofile.outfile=paste(start.file,"copynumberprofile.png",sep="",collapse="") # kjd 20-2-2014
 	nonroundedprofile.outfile=paste(start.file,"nonroundedprofile.png",sep="",collapse="") # kjd 20-2-2014
+	cnaStatusFile = paste(start.file,"copynumber_solution_status.txt",sep="",collapse="")
 
-	ascat_optimum_pair=runASCAT(logR, 1-BAF.data[,3], segLogR, segBAF, chr.segs, ascat_dist_choice,distance.outfile, copynumberprofile.outfile, nonroundedprofile.outfile, gamma=gamma_param, allow100percent=T, reliabilityFile=NA, min.ploidy, max.ploidy, min.rho, min.goodness.of.fit) # kjd 4-2-2014
+	ascat_optimum_pair=runASCAT(logR, 1-BAF.data[,3], segLogR, segBAF, chr.segs, ascat_dist_choice,distance.outfile, copynumberprofile.outfile, nonroundedprofile.outfile, cnaStatusFile=cnaStatusFile, gamma=gamma_param, allow100percent=T, reliabilityFile=NA, min.ploidy, max.ploidy, min.rho, min.goodness.of.fit) # kjd 4-2-2014
 }
 
 distance.outfile=paste(start.file,"second_distance.png",sep="",collapse="") # kjd 20-2-2014

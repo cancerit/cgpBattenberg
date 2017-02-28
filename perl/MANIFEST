@@ -1,6 +1,7 @@
 bin/battenberg.pl
 bin/battenberg_CN_to_VCF.pl
 bin/battenberg_version.pl
+bin/bb_vcf_to_ascat_cn.pl
 bin/download_generate_bberg_ref_files.pl
 docs.tar.gz
 lib/Sanger/CGP/Battenberg.pm
