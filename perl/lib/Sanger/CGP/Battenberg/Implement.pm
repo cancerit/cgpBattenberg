@@ -1009,7 +1009,9 @@ sub tmp_to_outdir {
   for my $format(@formats) {
     my $from = File::Spec->catfile($tmp,sprintf($format,$tumour_name));
     my $to = File::Spec->catfile($outdir,sprintf($format,$tumour_name));
-    _copy_file($from,$to);
+    if (-e $from) {
+      _copy_file($from,$to);
+    }
   }
 }
 
