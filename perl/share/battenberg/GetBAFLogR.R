@@ -20,8 +20,9 @@
 ##########LICENCE##########
 
 #getBAFsAndLogRs<-function(imputeInfoFile,inputFile, normalInputFile,  BAFnormalFile, BAFmutantFile, logRnormalFile, logRmutantFile,minCounts=NA,samplename="sample1")
-getBAFsAndLogRs<-function(imputeInfoFile,inputFile, normalInputFile,  BAFnormalFile, BAFmutantFile, logRnormalFile, logRmutantFile,minCounts=NA,samplename="sample1",thougenloc)
+getBAFsAndLogRs<-function(imputeInfoFile,inputFile, normalInputFile,  BAFnormalFile, BAFmutantFile, logRnormalFile, logRmutantFile,minCounts=NA,samplename="sample1",thougenloc, seed)
 {
+  set.seed(seed)
 	impute.info = read.table(imputeInfoFile,header=F,row.names=NULL,sep="\t",stringsAsFactors=F)
 	chr_names=unique(impute.info[,1])
 
