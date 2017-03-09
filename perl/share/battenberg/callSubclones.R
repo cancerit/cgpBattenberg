@@ -32,6 +32,8 @@ chr_names=unique(impute.info[,1])
 source(paste(lib_path,"orderEdges.R",sep="/"))
 
 start.file = toString(args[4])
+seed <-as.integer(args[5])
+
 rho_psi_info = read.table(paste(start.file,"_rho_and_psi.txt",sep=""),header=T,sep="\t",stringsAsFactors=F)
 
 #rho = rho_psi_info$rho[which(rho_psi_info$is.best)] # rho = tumour percentage (called tp in previous versions)
@@ -47,11 +49,11 @@ gamma=1
 
 #segmentation.gamma is the gamma used in PCF
 segmentation.gamma=NA
-if(length(args)>=5){
-	segmentation.gamma = as.integer(args[5])
+if(length(args)>=6){
+	segmentation.gamma = as.integer(args[6])
 	print(paste("segmentation.gamma=",segmentation.gamma,sep=""))
-	if(length(args)>=6){
-		gamma = as.numeric(args[6])
+	if(length(args)>=7){
+		gamma = as.numeric(args[7])
 		print(paste("platform gamma=",gamma,sep=""))
 	}
 }
@@ -209,7 +211,7 @@ for (i in 1:length(BAFlevels)) {
       nMin1o = nMin1[option]
       nMaj2o = nMaj2[option]
       nMin2o = nMin2[option]
-      set.seed(as.integer(Sys.time()))
+      set.seed(seed)
       permFraction=vector(length=noperms,mode="numeric")
       for(j in 1:noperms){
         permBAFs=sample(BAFke,length(BAFke),replace=T)
@@ -259,7 +261,7 @@ is_subclonal_min[is.na(is_subclonal_min)] = F
 segment_states_min = subcloneres$nMin1_A * ifelse(is_subclonal_min, subcloneres$frac1_A, 1)  + ifelse(is_subclonal_min, subcloneres$nMin2_A, 0) * ifelse(is_subclonal_min, subcloneres$frac2_A, 0)
 segment_states_maj = subcloneres$nMaj1_A * ifelse(is_subclonal_maj, subcloneres$frac1_A, 1)  + ifelse(is_subclonal_maj, subcloneres$nMaj2_A, 0) * ifelse(is_subclonal_maj, subcloneres$frac2_A, 0)
 ploidy = sum((segment_states_min+segment_states_maj) * seg_length) / sum(seg_length)
-  
+
 # Create user friendly cellularity and ploidy output file
 cellularity_ploidy_output = data.frame(cellularity = c(rho), ploidy = c(ploidy), psi = c(psit))
 write.table(cellularity_ploidy_output, paste(start.file, "_cellularity_ploidy.txt", sep=""), quote=F, sep="\t", row.names=F)

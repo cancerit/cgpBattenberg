@@ -38,6 +38,8 @@ use FindBin qw($Bin);
 use List::Util qw(first);
 use Vcf;
 use POSIX qw(ceil);
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 use File::ShareDir qw(module_dir);
 
@@ -49,16 +51,16 @@ use PCAP::Bam;
 use Data::Dumper;
 
 const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d -r %s};
-const my $RUN_BAF_LOG => q{ %s/RunBAFLogR.R %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_ 10 %s %s };
+const my $RUN_BAF_LOG => q{ %s/RunBAFLogR.R %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_ 10 %s %s %d };
 const my $IMPUTE_FROM_AF => q{ %s/GenerateImputeInputFromAlleleFrequencies.R %s %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_impute_input_chr %d %s};
-const my $RUN_IMPUTE => q{ %s/RunImpute.R %s %s %s %s %s_impute_input_chr %s_impute_output_chr %d};
+const my $RUN_IMPUTE => q{ %s/RunImpute.R %s %s %s %s %s_impute_input_chr %s_impute_output_chr %d %d};
 const my $COMBINE_IMPUTE => q{ %s/CombineImputeOutputs.R %s %s %s %s_impute_output_chr %d};
 const my $HAPLOTYPE_BAF => q{ %s/RunGetHaplotypedBAFs.R %s %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_impute_output_chr %s %s_ %d};
 const my $PLOT_HAPLOTYPE_BAFS => q{ %s/PlotHaplotypedData.R %s %s %d %s_chr%d_heterozygousMutBAFs_haplotyped.txt %s};
 const my $COMBINE_BAFS => q{ %s/CombineBAFfiles.R %s %s %s %s_chr _heterozygousMutBAFs_haplotyped.txt %s_allChromosomes_heterozygousMutBAFs_haplotyped.txt};
 const my $SEGMENT_PHASED => q{ %s/segmentBAFphased.R %s %s %d %d};
 const my $FIT_COPY_NUMBER => q{ %s/FitCopyNumber.R %s %s %s_ %d %d %f %d %f %f %f %f};
-const my $CALL_SUBCLONES => q{ %s/callSubclones.R %s %s %s %s %d %d};
+const my $CALL_SUBCLONES => q{ %s/callSubclones.R %s %s %s %s %d %d %d};
 
 const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d.txt};
 const my $ALLELE_LOCI_NAME => q{1000genomesloci2012_chr%d.txt};
@@ -109,6 +111,7 @@ const my $CN_VCF => q{%s_battenberg_cn.vcf};
 const my $CN_VCF_GZ => q{%s_battenberg_cn.vcf.gz};
 const my $CN_VCF_TABIX => q{%s_battenberg_cn.vcf.gz.tbi};
 const my $STATUS_TXT => q{%s_copynumber_solution_status.txt};
+const my $SEED_TXT => q{%s_battenberg_seed.txt};
 
 const my $RSCRIPT => q{Rscript};
 const my $IMPUTE_EXE => q{impute2};
@@ -430,6 +433,7 @@ sub battenberg_runbaflog{
 									$options->{'tumour_name'},
 									$options->{'tumour_name'},
 									$thou_gen_loc,
+                  $options->{'seed'},
   						);
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 
@@ -488,6 +492,7 @@ sub battenberg_runimpute{
 												$options->{'tumour_name'},
 												$options->{'tumour_name'},
 												$index,
+                        $options->{'seed'},
 											);
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
@@ -690,13 +695,13 @@ sub _calc_rho_psi_from_subclones_file {
   my $maj_cn= $options->{'new_maj_cn'};
 
   #Get the subclones file.
-  my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+  my $subcl_txt = File::Spec->catfile($tmp,sprintf("$SUBCLONES_TXT.gz",$options->{'tumour_name'}));
   die("Could not locate subclones.txt file '$subcl_txt'.") unless(-e $subcl_txt);
   #open and find the appropriate line
-  my $FH;
   my $ref_baf;
   my $log_r_ref;
-  open($FH,'<',$subcl_txt) || die("Error trying to read subclones file '$subcl_txt' :$!");
+  my $FH = IO::Uncompress::Gunzip->new($subcl_txt) or die "IO::Uncompress::Gunzip failed: $GunzipError\n";
+
   while(<$FH>){
     my $line = $_;
     next if($line =~ m/\s*chr/);
@@ -751,6 +756,7 @@ sub battenberg_callsubclones{
 												$impute_info,
 												$options->{'is_male'},
 												$options->{'tumour_name'},
+                        $options->{'seed'},
 												$options->{'seg_gamma'},
 												$options->{'plat_gamma'},
 									);
@@ -775,6 +781,9 @@ sub battenberg_finalise{
 												(2*(1-$rho) + $psi * $rho);
 	$options->{'normc'} = $normal_contamination;
 	_writeNormalContaminationToFile($options);
+
+  #Write seed to file
+  _writeSeedToFile($options);
 
 	#Tarball allelcounts and copy to results folder
 	if (PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]}) == 0){
@@ -949,10 +958,12 @@ sub battenberg_finalise{
                 if (-e $normal) {
                         _copy_file($normal,$normal_copy);
                 }
+		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+    gzip $subcl_txt => "$subcl_txt.gz" or die "gzip failed: $GzipError\n";
     tmp_to_outdir($tmp, $outdir, $tumour_name,
                   $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
                   $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $RHO_PSI_FILE,
-                  $NORMAL_CONTAMINATION_FILE, $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT, $STATUS_TXT);
+                  $NORMAL_CONTAMINATION_FILE, "$SUBCLONES_TXT.gz", $CELLULARITY_PLOIDY_TXT, $STATUS_TXT, $SEED_TXT);
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
 	}
@@ -1005,7 +1016,9 @@ sub tmp_to_outdir {
   for my $format(@formats) {
     my $from = File::Spec->catfile($tmp,sprintf($format,$tumour_name));
     my $to = File::Spec->catfile($outdir,sprintf($format,$tumour_name));
-    _copy_file($from,$to);
+    if (-e $from) {
+      _copy_file($from,$to);
+    }
   }
 }
 
@@ -1187,6 +1200,21 @@ sub _writeNormalContaminationToFile{
 	my $FH;
 	open($FH, '>', $file) || die("Error opening file '$file' for write: $!");
 		print $FH ($normal_cont,"\n");
+	close($FH);
+	return;
+}
+
+sub _writeSeedToFile{
+	# uncoverable subroutine
+	my $options = shift;
+	my $outdir = $options->{'outdir'};
+  my $tmp = $options->{'tmp'};
+	my $sample_name = $options->{'tumour_name'};
+  my $seed = $options->{'seed'};
+	my $file = File::Spec->catfile($tmp,sprintf($SEED_TXT,$sample_name));
+	my $FH;
+	open($FH, '>', $file) || die("Error opening file '$file' for write: $!");
+		print $FH ($seed,"\n");
 	close($FH);
 	return;
 }

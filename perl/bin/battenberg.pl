@@ -62,6 +62,7 @@ const my $DEFAULT_MIN_GOODNESS_OF_FIT=>0.63;
 const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
 const my $DEFAULT_PROTOCOL => 'WGS';
 const my $DEFAULT_PLATFORM => 'ILLUMINA';
+const my $DEFAULT_SEED => 1488823153;
 
 const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
 
@@ -184,6 +185,7 @@ sub setup {
           'j|jobs' => \$opts{'jobs'}, #query how many jobs are required for this step
           'nc|noclean' => \$opts{'noclean'},
           'nl|num_loci_files=i' => \$opts{'num_loci_files'},
+          'se|seed=i' => \$opts{'seed'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
@@ -387,6 +389,8 @@ sub setup {
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
 
+	$opts{'seed'} = $DEFAULT_SEED if(!exists($opts{'seed'}) || !defined($opts{'seed'}));
+
 	return \%opts;
 }
 
@@ -441,6 +445,7 @@ battenberg.pl [options]
     -platform              -pl  Sequencing platfrom [ILLUMINA]
     -genderloci            -gl  List of gender loci, required when '-ge L' [share/gender/GRCh37d5_Y.loci]
                                 - these are loci that will not present at all in a female sample
+    -seed                  -se Integer value to be used as a seed for random number generation [1488823153]
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)
