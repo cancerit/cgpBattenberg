@@ -445,7 +445,7 @@ battenberg.pl [options]
     -platform              -pl  Sequencing platfrom [ILLUMINA]
     -genderloci            -gl  List of gender loci, required when '-ge L' [share/gender/GRCh37d5_Y.loci]
                                 - these are loci that will not present at all in a female sample
-    -seed                  -se Integer value to be used as a seed for random number generation
+    -seed                  -se Integer value to be used as a seed for random number generation [1488823153]
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)
