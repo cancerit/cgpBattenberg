@@ -110,8 +110,21 @@ use Sanger::CGP::Vcf::VcfProcessLog;
     while(<$IN_FH>){
       my $line = $_;
       chomp($line);
-      next if($line =~ m/^\s+chr/);
-      my ($seg_no, $chr, $start, $end, $mt_cn_tot, $mt_cn_min, $mt_frac, $mt_cn_tot_sec, $mt_cn_min_sec, $mt_frac_sec) = (split('\s+',$line))[0,1,2,3,8,9,10,11,12,13];
+      next if($line =~ m/^\s*chr/);
+      my ($chr, $start, $end, $mt_cn_maj, $mt_cn_min, $mt_frac, $mt_cn_maj_sec, $mt_cn_min_sec, $mt_frac_sec) = (split('\s+',$line))[0,1,2,7,8,9,10,11,12];
+
+      #Fix to work round instances where the major and minor cn
+      #are set to NA
+      my $mt_cn_tot = '.';
+      if ($mt_cn_maj ne 'NA' && $mt_cn_min ne 'NA') {
+        $mt_cn_tot = $mt_cn_maj + $mt_cn_min;
+      }
+      $mt_cn_min = '.' if ($mt_cn_min eq 'NA');
+
+      my $mt_cn_tot_sec = '.';
+      if ($mt_cn_maj_sec ne 'NA' && $mt_cn_min_sec ne 'NA') {
+        $mt_cn_tot_sec = $mt_cn_maj + $mt_cn_min;
+      }
 
       my $extended = {  'mt_fcf' => $mt_frac eq 'NA' ? '.' : $mt_frac,
                         'mt_tcs' => $mt_cn_tot_sec eq 'NA' ? '.' : $mt_cn_tot_sec,
@@ -123,8 +136,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
       my $wt_cn_min = 1;
       $start--; # all symbolic ALTs require preceeding base padding
 
-      die("Unrecognised format in CN segments passed: '$line'.") unless(defined($seg_no)
-                                                                      && defined($chr)
+      die("Unrecognised format in CN segments passed: '$line'.") unless(defined($chr)
                                                                       && defined($start)
                                                                       && defined($end)
                                                                       && defined($wt_cn_tot)
