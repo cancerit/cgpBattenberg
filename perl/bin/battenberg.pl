@@ -494,13 +494,15 @@ Final output files are:
  <tumour_sample>_impute_output.tar.gz
  <tumour_sample>_normal_contamination.txt
  <tumour_sample>_second_copynumberprofile.png
- <tumour_sample>_subclones.txt
+ <tumour_sample>_subclones.txt.gz
  <tumour_sample>_hetbaf.tar.gz
  <tumour_sample>_logR_Baf_segmented.vcf.gz
  <tumour_sample>_logR_Baf_segmented.vcf.gz.tbi
  <tumour_sample>_other.tar.gz
  <tumour_sample>_second_distance.png
  <tumour_sample>_Tumor<tumour_sample>.png
+ <tumour_sample>_BattenbergProfile_average.png
+ <tumour_sample>_BattenbergProfile_subclones.png
 
 =item B<-reference>
 
