@@ -39,6 +39,8 @@ use List::Util qw(first);
 use Vcf;
 use POSIX qw(ceil);
 use List::MoreUtils qw(uniq);
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 use File::ShareDir qw(module_dir);
 
@@ -897,13 +899,13 @@ sub _calc_rho_psi_from_subclones_file {
   my $maj_cn= $options->{'new_maj_cn'};
 
   #Get the subclones file.
-  my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+  my $subcl_txt = File::Spec->catfile($tmp,sprintf("$SUBCLONES_TXT.gz",$options->{'tumour_name'}));
   die("Could not locate subclones.txt file '$subcl_txt'.") unless(-e $subcl_txt);
   #open and find the appropriate line
-  my $FH;
   my $ref_baf;
   my $log_r_ref;
-  open($FH,'<',$subcl_txt) || die("Error trying to read subclones file '$subcl_txt' :$!");
+  my $FH = IO::Uncompress::Gunzip->new($subcl_txt) or die "IO::Uncompress::Gunzip failed: $GunzipError\n";
+
   while(<$FH>){
     my $line = $_;
     next if($line =~ m/\s*chr/);
@@ -1192,11 +1194,13 @@ sub battenberg_finalise{
                 if (-e $normal) {
                         _copy_file($normal,$normal_copy);
                 }
+		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+    gzip $subcl_txt => "$subcl_txt.gz" or die "gzip failed: $GzipError\n";
     tmp_to_outdir($tmp, $outdir, $tumour_name,
                   $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
                   $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $PROFILE_AVERAGE_PNG,
                   $PROFILE_SUBCLONES_PNG, $RHO_PSI_FILE, $NORMAL_CONTAMINATION_FILE,
-                  $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT, $STATUS_TXT, $SEED_TXT);
+                  "$SUBCLONES_TXT.gz", $CELLULARITY_PLOIDY_TXT, $STATUS_TXT, $SEED_TXT);
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
 	}
@@ -1437,18 +1441,18 @@ sub _writeNormalContaminationToFile{
 }
 
 sub _writeSeedToFile{
-        # uncoverable subroutine
-        my $options = shift;
-        my $outdir = $options->{'outdir'};
+  # uncoverable subroutine
+  my $options = shift;
+  my $outdir = $options->{'outdir'};
   my $tmp = $options->{'tmp'};
-        my $sample_name = $options->{'tumour_name'};
+  my $sample_name = $options->{'tumour_name'};
   my $seed = $options->{'seed'};
-        my $file = File::Spec->catfile($tmp,sprintf($SEED_TXT,$sample_name));
-        my $FH;
-        open($FH, '>', $file) || die("Error opening file '$file' for write: $!");
-                print $FH ($seed,"\n");
-        close($FH);
-        return;
+  my $file = File::Spec->catfile($tmp,sprintf($SEED_TXT,$sample_name));
+  my $FH;
+  open($FH, '>', $file) || die("Error opening file '$file' for write: $!");
+  print $FH ($seed,"\n");
+  close($FH);
+  return;
 }
 
 sub _extractRhoPsiFromFile{
