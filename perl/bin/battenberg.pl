@@ -40,7 +40,7 @@ use PCAP::Cli;
 use Sanger::CGP::Battenberg::Implement;
 
 const my @VALID_PROCESS => qw( splitlocifiles allelecount concatallelecount
-                              baflog imputefromaf
+                              baflog gccorrect imputefromaf
 															impute combineimpute haplotypebafs
 															cleanuppostbaf plothaplotypes combinebafs
 															segmentphased fitcn subclones finalise );
@@ -62,6 +62,7 @@ const my $DEFAULT_MIN_GOODNESS_OF_FIT=>0.63;
 const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
 const my $DEFAULT_PROTOCOL => 'WGS';
 const my $DEFAULT_PLATFORM => 'ILLUMINA';
+const my $DEFAULT_SEED => 1488823153;
 
 const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
 
@@ -69,6 +70,7 @@ my %index_max = ( 'splitlocifiles' => 1,
                   'allelecount' => -1,
                   'concatallelecount' => 1,
 									'baflog' => 1,
+									'gccorrect' => 1,
 									'imputefromaf' => -1,
 									'impute' => -1,
 									'combineimpute' => -1,
@@ -111,6 +113,8 @@ my %index_max = ( 'splitlocifiles' => 1,
 
 	Sanger::CGP::Battenberg::Implement::battenberg_runbaflog($options) if(!exists $options->{'process'} || $options->{'process'} eq 'baflog');
 
+	Sanger::CGP::Battenberg::Implement::battenberg_gc_correct($options) if(!exists $options->{'process'} || $options->{'process'} eq 'gccorrect');
+
 	$threads->run($options->{'job_count'}, 'battenberg_imputefromaf', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'imputefromaf');
 
 	$threads->run($options->{'job_count'}, 'battenberg_runimpute', $options) if(!exists $options->{'process'} || $options->{'process'} eq 'impute');
@@ -150,6 +154,7 @@ sub setup {
           'x|limit=i' => \$opts{'limit'},
 					'p|process=s' => \$opts{'process'},
 					'u|thousand-genomes-loc=s' => \$opts{'1kgenloc'},
+          'gc|gc-correction-loc=s' => \$opts{'gc_correct_loc'},
 					'r|reference=s' => \$opts{'reference'},
 					'e|impute-info=s' => \$opts{'impute_info'},
 					'c|prob-loci=s' => \$opts{'prob_loci'},
@@ -184,6 +189,7 @@ sub setup {
           'j|jobs' => \$opts{'jobs'}, #query how many jobs are required for this step
           'nc|noclean' => \$opts{'noclean'},
           'nl|num_loci_files=i' => \$opts{'num_loci_files'},
+          'se|seed=i' => \$opts{'seed'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
@@ -387,6 +393,8 @@ sub setup {
 	$opts{'protocol'} = $DEFAULT_PROTOCOL if(!exists($opts{'protocol'}) || !defined($opts{'protocol'}));
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
 
+  $opts{'seed'} = $DEFAULT_SEED if(!exists($opts{'seed'}) || !defined($opts{'seed'}));
+
 	return \%opts;
 }
 
@@ -441,6 +449,7 @@ battenberg.pl [options]
     -platform              -pl  Sequencing platfrom [ILLUMINA]
     -genderloci            -gl  List of gender loci, required when '-ge L' [share/gender/GRCh37d5_Y.loci]
                                 - these are loci that will not present at all in a female sample
+    -seed                  -se Integer value to be used as a seed for random number generation [1488823153]
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)
@@ -485,13 +494,15 @@ Final output files are:
  <tumour_sample>_impute_output.tar.gz
  <tumour_sample>_normal_contamination.txt
  <tumour_sample>_second_copynumberprofile.png
- <tumour_sample>_subclones.txt
+ <tumour_sample>_subclones.txt.gz
  <tumour_sample>_hetbaf.tar.gz
  <tumour_sample>_logR_Baf_segmented.vcf.gz
  <tumour_sample>_logR_Baf_segmented.vcf.gz.tbi
  <tumour_sample>_other.tar.gz
  <tumour_sample>_second_distance.png
  <tumour_sample>_Tumor<tumour_sample>.png
+ <tumour_sample>_BattenbergProfile_average.png
+ <tumour_sample>_BattenbergProfile_subclones.png
 
 =item B<-reference>
 
@@ -622,6 +633,7 @@ Only process this step then exit, optionally set -index.  The order of steps is 
     allelecount *
     concatallelecount
     baflog
+    gccorrect
     imputefromaf *
     impute *
     combineimpute *

@@ -38,6 +38,9 @@ use FindBin qw($Bin);
 use List::Util qw(first);
 use Vcf;
 use POSIX qw(ceil);
+use List::MoreUtils qw(uniq);
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 use File::ShareDir qw(module_dir);
 
@@ -49,18 +52,23 @@ use PCAP::Bam;
 use Data::Dumper;
 
 const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d -r %s};
-const my $RUN_BAF_LOG => q{ %s/RunBAFLogR.R %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_ 10 %s %s };
-const my $IMPUTE_FROM_AF => q{ %s/GenerateImputeInputFromAlleleFrequencies.R %s %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_impute_input_chr %d %s};
-const my $RUN_IMPUTE => q{ %s/RunImpute.R %s %s %s %s %s_impute_input_chr %s_impute_output_chr %d};
-const my $COMBINE_IMPUTE => q{ %s/CombineImputeOutputs.R %s %s %s %s_impute_output_chr %d};
-const my $HAPLOTYPE_BAF => q{ %s/RunGetHaplotypedBAFs.R %s %s %s %s_alleleFrequencies.txt %s_alleleFrequencies.txt %s_impute_output_chr %s %s_ %d};
-const my $PLOT_HAPLOTYPE_BAFS => q{ %s/PlotHaplotypedData.R %s %s %d %s_chr%d_heterozygousMutBAFs_haplotyped.txt %s};
-const my $COMBINE_BAFS => q{ %s/CombineBAFfiles.R %s %s %s %s_chr _heterozygousMutBAFs_haplotyped.txt %s_allChromosomes_heterozygousMutBAFs_haplotyped.txt};
-const my $SEGMENT_PHASED => q{ %s/segmentBAFphased.R %s %s %d %d};
-const my $FIT_COPY_NUMBER => q{ %s/FitCopyNumber.R %s %s %s_ %d %d %f %d %f %f %f %f};
-const my $CALL_SUBCLONES => q{ %s/callSubclones.R %s %s %s %s %d %d};
-
+const my $RUN_FUNC => q{ -e '%s %s'};
+const my $SOURCE => q{source("%s"); };
+const my $LIBRARY => q{library(Battenberg);};
+const my $RUN_BAF_LOG => q{ getBAFsAndLogRs(tumourAlleleCountsFile.prefix="%s", normalAlleleCountsFile.prefix="%s", figuresFile.prefix="%s", BAFnormalFile="%s", BAFmutantFile="%s", logRnormalFile="%s", logRmutantFile="%s", combinedAlleleCountsFile="%s", %s, g1000file.prefix="%s", minCounts=%s, samplename="%s", seed=%s) };
+const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s", %s) };
+const my $IMPUTE_FROM_AF => q{ generate.impute.input.wgs(chrom=%s, tumour.allele.counts.file="%s", normal.allele.counts.file="%s", output.file="%s", imputeinfofile="%s", is.male="%s", problemLociFile="%s", useLociFile=%s, heterozygousFilter=%s) };
+const my $RUN_IMPUTE => q{ run.impute(inputfile="%s", outputfile.prefix="%s", is.male="%s", imputeinfofile="%s", impute.exe="%s", region.size=%s, chrom=%s, seed=%s)};
+const my $COMBINE_IMPUTE => q{ combine.impute.output(inputfile.prefix="%s", outputfile="%s", is.male="%s", imputeinfofile="%s", region.size=%s, chrom=%s ) };
+const my $HAPLOTYPE_BAF => q{ GetChromosomeBAFs(chrom="%s", SNP_file="%s", haplotypeFile="%s", samplename="%s", outfile="%s", %s, minCounts=%s) };
+const my $PLOT_HAPLOTYPE_BAFS => q{ plot.haplotype.data(haplotyped.baf.file="%s", imageFileName="%s", samplename="%s", chrom=%s, %s) };
+const my $COMBINE_BAFS => q{ combine.baf.files(inputfile.prefix="%s_chr", inputfile.postfix="_heterozygousMutBAFs_haplotyped.txt", outputfile="%s", no.chrs=%s) };
+const my $SEGMENT_PHASED => q{ segment.baf.phased(samplename="%s", inputfile="%s", outputfile="%s", gamma=%s, phasegamma=%s, kmin=%s, phasekmin=%s, calc_seg_baf_option=%s ) };
+const my $FIT_COPY_NUMBER => q{ fit.copy.number(samplename="%s", outputfile.prefix="%s_", inputfile.baf.segmented="%s", inputfile.baf="%s", inputfile.logr="%s", dist_choice=%s, ascat_dist_choice=%s, min.ploidy=%s, max.ploidy=%s, min.rho=%s, max.rho=%s, min.goodness=%s, uninformative_BAF_threshold=%s, gamma_param=%s %s) };
+const my $CALL_SUBCLONES => q{ callSubclones(sample.name="%s", baf.segmented.file="%s", logr.file="%s", rho.psi.file="%s", output.file="%s", output.figures.prefix="%s", output.gw.figures.prefix="%s", masking_output_file="%s", sv_breakpoints_file="%s", %s, gamma=%s, segmentation.gamma=%s, siglevel=%s, maxdist=%s, noperms=%s, seed=%s, calc_seg_baf_option=%s) };
+const my $GET_CHROM_NAMES => q{ get.chrom.names("%s", "%s")};
 const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d.txt};
+const my $ALLELE_COUNT_PREFIX => q{%s_alleleFrequencies_chr};
 const my $ALLELE_LOCI_NAME => q{1000genomesloci2012_chr%d.txt};
 const my $ALLELE_COUNT_TAR => q{%s_allelecounts.tar.gz};
 const my $ALLELE_COUNT_DIR => q{%s_allelecounts};
@@ -68,15 +76,19 @@ const my $ALLELE_COUNT_SCRIPT => q{alleleCounter};
 const my $NORMAL_CONTAMINATION_FILE => q{%s_normal_contamination.txt};
 const my $RHO_PSI_FILE => q{%s_rho_and_psi.txt};
 const my $SUBCLONE_PNG_OUTPUT => q{%s_subclones_chr%s.png};
+const my $SUBCLONE_PREFIX => q{%s_subclones_chr};
 const my $SUBCLONE_TAR => q{%s_subclones.tar.gz};
 const my $SUBCLONE_DIR => q{%s_subclones};
+const my $PROFILE_PNG => q{%s_BattenbergProfile};
+const my $SEG_MASKING_TXT => q{%s_segment_masking_details.txt};
 const my $HETDATA_OUTPUT => q{%s_chr%s_heterozygousData.png};
 const my $HETDATA_TAR => q{%s_hetdata.tar.gz};
 const my $HETDATA_DIR => q{%s_hetdata};
 const my $HETBAFTXT_OUTPUT => q{%s_chr%s_heterozygousMutBAFs_haplotyped.txt};
+const my $COMBINE_HETBAFTXT => q{%s_heterozygousMutBAFs_haplotyped.txt};
 const my $HETBAFTXT_TAR => q{%s_hetbaf.tar.gz};
 const my $HETBAFTXT_DIR => q{%s_hetbaf};
-const my $OTHER_PNG_OUTPUT => q{%s_chr%s.png};
+const my $OTHER_PNG_OUTPUT => q{%s_segment_chr%s.png};
 const my $OTHER_PNG_TAR => q{%s_other.tar.gz};
 const my $OTHER_PNG_DIR => q{%s_other};
 const my $RAFSEG_PNG_OUTPUT => q{%s_RAFseg_chr%s.png};
@@ -89,15 +101,17 @@ const my $IMPUTE_OUTPUT_OUTPUT => q{%s_impute_output_chr%d_allHaplotypeInfo.txt}
 const my $IMPUTE_OUTPUT_TAR => q{%s_impute_output.tar.gz};
 const my $IMPUTE_OUTPUT_DIR => q{%s_impute_output};
 const my $SUNRISE_PNG	=> q{%s_distance.png};
-const my $TUMOUR_PNG	=> q{%s_Tumor%s.png};
+const my $TUMOUR_PNG	=> q{%s.tumour.png};
 const my $TUMOUR_CORRECTED_PNG	=> q{%s_Tumor.png};
-const my $NORMAL_PNG	=> q{%s_Germline%s.png};
+const my $NORMAL_PNG	=> q{%s.germline.png};
 const my $NORMAL_CORRECTED_PNG	=> q{%s_Germline.png};
 const my $COPY_NO_PNG	=> q{%s_second_copynumberprofile.png};
 const my $NON_ROUNDED_PNG	=> q{%s_second_nonroundedprofile.png};
 const my $ALT_COPY_NO_ROUNDED_PNG => q{%s_copynumberprofile.png};
 const my $ALT_NON_ROUNDED_PNG => q{%s_nonroundedprofile.png};
 const my $SECOND_DISTANCE_PNG => q{%s_second_distance.png};
+const my $PROFILE_AVERAGE_PNG => q{%s_BattenbergProfile_average.png};
+const my $PROFILE_SUBCLONES_PNG => q{%s_BattenbergProfile_subclones.png};
 const my $BAF_SEGMENT_TXT => q{%s.BAFsegmented.txt};
 const my $LOGR_SEGMENT_TXT => q{%s.logRsegmented.txt};
 const my $SUBCLONES_TXT => q{%s_subclones.txt};
@@ -109,6 +123,15 @@ const my $CN_VCF => q{%s_battenberg_cn.vcf};
 const my $CN_VCF_GZ => q{%s_battenberg_cn.vcf.gz};
 const my $CN_VCF_TABIX => q{%s_battenberg_cn.vcf.gz.tbi};
 const my $STATUS_TXT => q{%s_copynumber_solution_status.txt};
+const my $SEED_TXT => q{%s_battenberg_seed.txt};
+const my $GC_CORRECTED_TAB => q{%s_mutantLogR_gcCorrected.tab};
+const my $GC_WINDOW_CORR_TXT => q{%s_GCwindowCorrelations.txt};
+const my $GC_CORRECT_PREFIX => q{1000_genomes_GC_corr_chr_};
+const my $NORMAL_BAF_TAB => q{%s_normalBAF.tab};
+const my $TUMOUR_BAF_TAB => q{%s_mutantBAF.tab};
+const my $NORMAL_LOGR_TAB => q{%s_normalLogR.tab};
+const my $TUMOUR_LOGR_TAB => q{%s_mutantLogR.tab};
+const my $ALLELECOUNTS_TAB => q{%s_alleleCounts.tab};
 
 const my $RSCRIPT => q{Rscript};
 const my $IMPUTE_EXE => q{impute2};
@@ -119,6 +142,7 @@ const my $IMPUTE_OUTPUT => q{%s_impute_output_chr%d.txt};
 const my $ALLELE_COUNT_PARA => ' -b %s -o %s -l %s ';
 
 #thousand genomes loci files
+const my $ONEKGEN_ALLELE => q{1000genomesAlleles2012_chr};
 const my $ONEKGEN_LOCI_FILE_PATTERN => q{1000genomesloci2012_chr*.txt};
 const my $ONEKGEN_LOCI_FILE_REGEX => q{1000genomesloci2012_chr(\w+).txt};
 const my $SPLIT_LOCI_GLOB => q{1000genomesloci2012_chr*_split%d.txt};
@@ -128,6 +152,26 @@ const my $SPLIT_ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d_split%d.txt}
 const my $SPLIT_ALLELE_COUNT_OUTPUT_GLOB => q{*_alleleFrequencies_chr*_split*.txt};
 const my $SPLIT_ALLELE_COUNT_OUTPUT_REGEX => q{(.*)_alleleFrequencies_chr(\w+)_split(\d+).txt};
 
+#runbaflog
+const my $MIN_NORMAL_DEPTH => 10;
+
+#imputefromaf
+const my $HETEROZYGOUS_FILTER => 0.1;
+
+#runimpute
+const my $IMPUTE_REGION_SIZE => 5000000;
+
+#segmentphased
+const my $SEGMENTATION_GAMMA => 10;
+const my $PHASING_GAMMA => 1;
+const my $KMIN => 3;
+const my $PHASE_KMIN => 3;
+const my $CALC_SEG_BAF_OPTION => 1;
+
+#callsubclones
+const my $SIGLEVEL => 0.05;
+const my $MAXDIST => 0.01;
+const my $NOPERMS => 1000;
 
 const my @BATTENBERG_RESULT_FILES => qw(
 																					%s_Tumor.png
@@ -421,18 +465,84 @@ sub battenberg_runbaflog{
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-  $command .= sprintf($RUN_BAF_LOG,
-  								$options->{'bat_path'}, #Used to build path to run Rscript
-  								$options->{'bat_path'}, #Used by rScript to path to modules
-									$impute_info,
-									$options->{'tumour_name'},
-									$options->{'normal_name'},
-									$options->{'tumour_name'},
-									$options->{'tumour_name'},
-									$thou_gen_loc,
-  						);
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $tumourAlleleCountsFile_prefix = sprintf $ALLELE_COUNT_PREFIX, $tumour_name;
+  my $normalAlleleCountsFile_prefix = sprintf $ALLELE_COUNT_PREFIX, $normal_name;
+
+  my $figuresFile_prefix = $tumour_name . '_';
+  my $BAFnormalFile = sprintf $NORMAL_BAF_TAB, $tumour_name;
+  my $BAFmutantFile = sprintf $TUMOUR_BAF_TAB, $tumour_name;
+  my $logRnormalFile = sprintf $NORMAL_LOGR_TAB, $tumour_name;
+  my $logRmutantFile = sprintf $TUMOUR_LOGR_TAB, $tumour_name;
+  my $combinedAlleleCountsFile = sprintf $ALLELECOUNTS_TAB, $tumour_name;
+  my $g1000file_prefix = File::Spec->catfile($thou_gen_loc, $ONEKGEN_ALLELE);
+  my $minCounts = $MIN_NORMAL_DEPTH,
+  my $samplename = $options->{'tumour_name'};
+  my $seed = $options->{'seed'};
+
+  my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
+
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'prepare_wgs.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'util.R');
+#  my $source3 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'clonal_ascat.R');
+
+  my $function = sprintf $RUN_BAF_LOG,
+                         $tumourAlleleCountsFile_prefix,
+                         $normalAlleleCountsFile_prefix,
+                         $figuresFile_prefix,
+                         $BAFnormalFile,
+                         $BAFmutantFile,
+                         $logRnormalFile,
+                         $logRmutantFile,
+                         $combinedAlleleCountsFile,
+                         "chr_names=as.vector(c($chr_names))",
+                         $g1000file_prefix,
+                         $minCounts,
+                         $samplename,
+                         $seed
+                         ;
+  #$command .= sprintf $RUN_FUNC, "$source1 $source2 $source3", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
+
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 
+	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
+}
+
+sub battenberg_gc_correct {
+  # uncoverable subroutine
+	my ($options) = @_;
+	my $tmp = $options->{'tmp'};
+	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+	my $mod_path = $options->{'mod_path'};
+	my $impute_info = $options->{'impute_info'};
+	my $prob_loci = $options->{'prob_loci'};
+  my $is_male = $options->{'is_male'};
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $logRmutantFile = sprintf $TUMOUR_LOGR_TAB, $tumour_name;
+  my $outfile = sprintf $GC_CORRECTED_TAB, $tumour_name;
+  my $correlations_outfile = sprintf $GC_WINDOW_CORR_TXT, $tumour_name;
+  my $gc_content_file_prefix = File::Spec->catfile($options->{'gc_correct_loc'}, $GC_CORRECT_PREFIX);
+  my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
+
+	#Use the share directory so we don't have to symlink anything.
+	my $command = "cd $tmp; ";
+	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
+
+  #my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'prepare_wgs.R');
+  my $function = sprintf $GC_CORRECT,
+    $logRmutantFile,
+    $outfile,
+    $correlations_outfile,
+    $gc_content_file_prefix,
+    "chrom_names=as.vector(c($chr_names))";
+
+#  $command .= sprintf $RUN_FUNC, "$source1", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
+
+	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
 
@@ -445,21 +555,36 @@ sub battenberg_imputefromaf{
 	my $mod_path = $options->{'mod_path'};
 	my $impute_info = $options->{'impute_info'};
 	my $prob_loci = $options->{'prob_loci'};
+  my $is_male = $options->{'is_male'};
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+
+  my $tumour_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $index));
+  my $normal_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$normal_name, $index));
+
+  my $output_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $index;
+  my $use_loci_file = 'NA';
+  my $heterozygousFilter = $HETEROZYGOUS_FILTER;
+
 	#Use the share directory so we don't have to symlink anything.
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
- 	$command .= sprintf($IMPUTE_FROM_AF,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$options->{'normal_name'},
-												$options->{'tumour_name'},
-												$index,
-												$prob_loci
- 											);
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'prepare_wgs.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'impute.R');
+  my $function =sprintf $IMPUTE_FROM_AF,
+    $index,
+    $tumour_allele_counts_file,
+    $normal_allele_counts_file,
+    $output_file,
+    $impute_info,
+    $is_male,
+    $prob_loci,
+    $use_loci_file,
+    $heterozygousFilter;
+
+#  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -475,20 +600,31 @@ sub battenberg_runimpute{
 	my $impute_info = $options->{'impute_info'};
 	my $impute_exe = _which($IMPUTE_EXE) || die "Unable to find $IMPUTE_EXE in path";
 
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $input_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $index;
+  my $output_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $index;
+  my $is_male = $options->{'is_male'};
+  my $seed = $options->{'seed'};
+  my $region_size = $IMPUTE_REGION_SIZE;
+
 	#Use the share directory so we don't have to symlink anything.
 	my $command = "cd $tmp; ";
-	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-	$command .= sprintf($RUN_IMPUTE,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$impute_exe,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$options->{'tumour_name'},
-												$index,
-											);
+	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'impute.R');
+  my $function =sprintf $RUN_IMPUTE,
+    $input_file,
+    $output_file,
+    $is_male,
+    $impute_info,
+    $impute_exe,
+    $region_size,
+    $index,
+    $seed;
+
+ # $command .= sprintf $RUN_FUNC, "$source1", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -503,18 +639,30 @@ sub battenberg_combineimpute{
 	my $mod_path = $options->{'mod_path'};
 	my $impute_info = $options->{'impute_info'};
 
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $input_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $index;
+  my $output_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $index;
+
+  my $is_male = $options->{'is_male'};
+  my $region_size = $IMPUTE_REGION_SIZE;
+
 	#Use the share directory so we don't have to symlink anything.
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-	$command .= sprintf($COMBINE_IMPUTE,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$index,
-												);
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'impute.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'util.R');
+  my $function =sprintf $COMBINE_IMPUTE,
+    $input_file,
+    $output_file,
+    $is_male,
+    $impute_info,
+    $region_size,
+    $index;
+
+#  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -529,21 +677,29 @@ sub battenberg_haplotypebaf{
 	my $mod_path = $options->{'mod_path'};
 	my $impute_info = $options->{'impute_info'};
 
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $snp_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $index));
+
+  my $haplotype_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $index;
+  my $outfile = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $index;
+  my $min_counts = $MIN_NORMAL_DEPTH;
+  my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
+
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-	$command .= sprintf($HAPLOTYPE_BAF,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$options->{'normal_name'},
-												$options->{'tumour_name'},
-												$options->{'tumour_name'},
-												$options->{'tumour_name'},
-												$index,
-							);
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'haplotype.R');
+  my $function =sprintf $HAPLOTYPE_BAF,
+    $index,
+    $snp_file,
+    $haplotype_file,
+    $tumour_name, $outfile,
+    "chr_names=as.vector(c($chr_names))",
+     $min_counts;
+
+#  $command .= sprintf $RUN_FUNC, "$source1", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -574,19 +730,26 @@ sub battenberg_plothaplotypes{
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
 	my $mod_path = $options->{'mod_path'};
 	my $impute_info = $options->{'impute_info'};
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $haplotype_file = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $index;
+  my $image_file = sprintf $HETDATA_OUTPUT, $tumour_name, $index;
+  my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
 
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-	$command .= sprintf($PLOT_HAPLOTYPE_BAFS,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$index,
-												$options->{'tumour_name'},
-												$index,
-												$options->{'tumour_name'},
-											);
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'haplotype.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'plotting.R');
+  my $function =sprintf $PLOT_HAPLOTYPE_BAFS,
+    $haplotype_file,
+    $image_file,
+    $tumour_name,
+    $index,
+    "chr_names=as.vector(c($chr_names))";
+
+#  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, $index);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), $index);
@@ -599,17 +762,25 @@ sub battenberg_combinebafs{
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
 	my $mod_path = $options->{'mod_path'};
 	my $impute_info = $options->{'impute_info'};
+
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $output_file = sprintf $COMBINE_HETBAFTXT, $tumour_name;
+  my $chroms = _get_chrom_names($impute_info, $options->{'is_male'});
+  my $num_chrs = @$chroms;
+
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
- 	$command .= sprintf($COMBINE_BAFS,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$options->{'tumour_name'},
- 								);
+  #my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'haplotype.R');
+  #my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'util.R');
+  my $function =sprintf $COMBINE_BAFS,
+    $tumour_name,
+    $output_file,
+    $num_chrs;
+
+#  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
@@ -620,16 +791,36 @@ sub battenberg_segmentphased{
 	my $options = shift;
 	my $tmp = $options->{'tmp'};
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $input_file = sprintf $COMBINE_HETBAFTXT, $tumour_name;
+  my $output_file = sprintf $BAF_SEGMENT_TXT, $tumour_name;
+  my $gamma = $SEGMENTATION_GAMMA;
+  my $phasegamma = $PHASING_GAMMA;
+  my $kmin = $KMIN;
+  my $phasekmin = $PHASE_KMIN;
+  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
- 	$command .= sprintf($SEGMENT_PHASED,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$options->{'tumour_name'},
-												$options->{'seg_gamma'},
-												$options->{'phase_gamma'},
-										);
+ # my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'segmentation.R');
+ # my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'fastPCF.R');
+ # my $source3 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'plotting.R');
+
+  my $function = sprintf $SEGMENT_PHASED,
+    $tumour_name,
+    $input_file,
+    $output_file,
+    $gamma,
+    $phasegamma,
+    $kmin,
+    $phasekmin,
+    $calc_seg_baf_option;
+
+#  $command .= sprintf $RUN_FUNC, "$source1 $source2 $source3", $function;
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
@@ -641,41 +832,59 @@ sub battenberg_fitcopyno{
 	my $options = shift;
 	my $tmp = $options->{'tmp'};
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $BAFsegmentedFile = sprintf $BAF_SEGMENT_TXT, $tumour_name;
+  my $BAFmutantFile = sprintf $TUMOUR_BAF_TAB, $tumour_name;
+  my $input_file_logr = sprintf $TUMOUR_LOGR_TAB, $tumour_name ;
+
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
-	$command .= sprintf($FIT_COPY_NUMBER,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$options->{'tumour_name'},
-												$options->{'tumour_name'},
-												$options->{'clonality_dist'},
-												$options->{'ascat_dist'},
-												$options->{'balanced_thresh'},
-												$options->{'plat_gamma'},
-												$options->{'min_ploidy'},
-												$options->{'max_ploidy'},
-												$options->{'min_rho'},
-												$options->{'min_goodness'},
-											);
-  if(exists($options->{'new_chr'}) && defined($options->{'new_chr'})){
+
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'fitcopynumber.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'util.R');
+#  my $source3 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'clonal_ascat.R');
+#  my $source4 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'orderEdges.R');
+#  my $source5 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'plotting.R');
+
+ if(exists($options->{'new_chr'}) && defined($options->{'new_chr'})){
     my ($rho, $psi) = _calc_rho_psi_from_subclones_file($options);
     #put rho and psi in the params.
     $options->{'psi'} = $psi;
     $options->{'rho'} = $rho;
   }
-
+  my $rho_psi_cmds = q{};
   if (exists ($options->{'rho'}) && defined($options->{'rho'})){
     #Sanity checks for psi and rho
-    if ($options->{'rho'} < $options->{'min_rho'} || $options->{'rho'} > $options->{'max_rho'}) {
-      die("Invalid value for rho (" . $options->{'rho'} . "). This should be in the range specified by min_rho (" . $options->{'min_rho'} . ") and max_rho (" . $options->{'max_rho'} . ")");
-    }
-    if ($options->{'psi'} < $options->{'min_ploidy'} || $options->{'psi'} > $options->{'max_ploidy'}) {
-      die("Invalid value for ploidy (" . $options->{'psi'} . "). This should be in the range specified by min_ploidy (" . $options->{'min_ploidy'} . ") and max_ploidy (" . $options->{'max_ploidy'} . ")");
-    }
-
-    $command .= ' '. $options->{'rho'};
-    $command .= ' ' . $options->{'psi'};
+    #if ($options->{'rho'} < $options->{'min_rho'} || $options->{'rho'} > $options->{'max_rho'}) {
+    #  die("Invalid value for rho (" . $options->{'rho'} . "). This should be in the range specified by min_rho (" . $options->{'min_rho'} . ") and max_rho (" . $options->{'max_rho'} . ")");
+    #}
+    #if ($options->{'psi'} < $options->{'min_ploidy'} || $options->{'psi'} > $options->{'max_ploidy'}) {
+    #  die("Invalid value for ploidy (" . $options->{'psi'} . "). This should be in the range specified by min_ploidy (" . $options->{'min_ploidy'} . ") and max_ploidy (" . $options->{'max_ploidy'} . ")");
+    #}
+    $rho_psi_cmds .= ', use_preset_rho_psi=T';
+    $rho_psi_cmds .= ', preset_rho='. $options->{'rho'};
+    $rho_psi_cmds .= ', preset_psi=' . $options->{'psi'};
   }
+  my $function = sprintf $FIT_COPY_NUMBER,
+    $tumour_name,
+    $tumour_name,
+    $BAFsegmentedFile,
+    $BAFmutantFile,
+    $input_file_logr,
+    $options->{'clonality_dist'},
+    $options->{'ascat_dist'},
+    $options->{'min_ploidy'},
+    $options->{'max_ploidy'},
+    $options->{'min_rho'},
+    $options->{'max_rho'},
+    $options->{'min_goodness'},
+    $options->{'balanced_thresh'},
+    $options->{'plat_gamma'},
+    $rho_psi_cmds;
+
+  $command .=  sprintf $RUN_FUNC, $LIBRARY, $function;
+
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
@@ -690,18 +899,18 @@ sub _calc_rho_psi_from_subclones_file {
   my $maj_cn= $options->{'new_maj_cn'};
 
   #Get the subclones file.
-  my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+  my $subcl_txt = File::Spec->catfile($tmp,sprintf("$SUBCLONES_TXT.gz",$options->{'tumour_name'}));
   die("Could not locate subclones.txt file '$subcl_txt'.") unless(-e $subcl_txt);
   #open and find the appropriate line
-  my $FH;
   my $ref_baf;
   my $log_r_ref;
-  open($FH,'<',$subcl_txt) || die("Error trying to read subclones file '$subcl_txt' :$!");
+  my $FH = IO::Uncompress::Gunzip->new($subcl_txt) or die "IO::Uncompress::Gunzip failed: $GunzipError\n";
+
   while(<$FH>){
     my $line = $_;
     next if($line =~ m/\s*chr/);
     chomp($line);
-    my ($row_no,$chr,$start,$stop,$BAF,$unused,$LogR,undef) = split(/\t/,$line);
+    my ($chr,$start,$stop,$BAF,$unused,$LogR,undef) = split(/\t/,$line);
     if($chr eq $new_chr && $new_pos >= $start && $new_pos <= $stop) {
       $ref_baf = $BAF;
       $log_r_ref = $LogR;
@@ -742,18 +951,51 @@ sub battenberg_callsubclones{
 	my $tmp = $options->{'tmp'};
 	my $impute_info = $options->{'impute_info'};
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), 0);
+  my $tumour_name = $options->{'tumour_name'};
+  my $normal_name = $options->{'normal_name'};
+  my $BAFsegmentedFile = sprintf $BAF_SEGMENT_TXT, $tumour_name;
+  my $logr_file = sprintf $GC_CORRECTED_TAB, $tumour_name;
+  my $rho_psi_file = sprintf $RHO_PSI_FILE,  $tumour_name;
+  my $output_file = sprintf $SUBCLONES_TXT, $tumour_name;
+  my $output_figures_prefix = sprintf $SUBCLONE_PREFIX, $tumour_name;
+  my $output_gw_figures_prefix = sprintf $PROFILE_PNG, $tumour_name;
+  my $masking_output_file = sprintf $SEG_MASKING_TXT, $tumour_name;
+  my $sv_breakpoints_file="NA";
+  my $chrom_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
+  my $segmentation_gamma="NA";
+  my $siglevel = $SIGLEVEL;
+  my $maxdist = $MAXDIST;
+  my $noperms = $NOPERMS;
+  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+  my $seed = $options->{'seed'};
+
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
 
-	$command .= sprintf($CALL_SUBCLONES,
-												$options->{'bat_path'},
-												$options->{'bat_path'},
-												$impute_info,
-												$options->{'is_male'},
-												$options->{'tumour_name'},
-												$options->{'seg_gamma'},
-												$options->{'plat_gamma'},
-									);
+#  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'fitcopynumber.R');
+#  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'util.R');
+#  my $source3 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'orderEdges.R');
+
+  my $function = sprintf $CALL_SUBCLONES,
+    $tumour_name,
+    $BAFsegmentedFile,
+    $logr_file,
+    $rho_psi_file,
+    $output_file,
+    $output_figures_prefix,
+    $output_gw_figures_prefix,
+    $masking_output_file,
+    $sv_breakpoints_file,
+    "chr_names=as.vector(c($chrom_names))",
+    $options->{'plat_gamma'},
+    $segmentation_gamma,
+    $siglevel,
+    $maxdist,
+    $noperms,
+    $seed,
+    $calc_seg_baf_option;
+
+  $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
 
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
 	return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
@@ -775,6 +1017,9 @@ sub battenberg_finalise{
 												(2*(1-$rho) + $psi * $rho);
 	$options->{'normc'} = $normal_contamination;
 	_writeNormalContaminationToFile($options);
+
+  #Write seed to file
+  _writeSeedToFile($options);
 
 	#Tarball allelcounts and copy to results folder
 	if (PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]}) == 0){
@@ -938,21 +1183,24 @@ sub battenberg_finalise{
 		$tumour_dot =~ s/[-]/./g;
 
 		#Tumour png
-		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name,$tumour_dot));
+		my $tumour = File::Spec->catfile($tmp,sprintf($TUMOUR_PNG,$tumour_name));
 		my $tumour_copy = File::Spec->catfile($outdir,sprintf($TUMOUR_CORRECTED_PNG,$tumour_name));
                 if (-e $tumour) {
                        _copy_file($tumour,$tumour_copy);
                 }
 		#Normal png
-		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$tumour_name,$tumour_dot));
+		my $normal = File::Spec->catfile($tmp,sprintf($NORMAL_PNG,$tumour_name));
 		my $normal_copy = File::Spec->catfile($outdir,sprintf($NORMAL_CORRECTED_PNG,$tumour_name));
                 if (-e $normal) {
                         _copy_file($normal,$normal_copy);
                 }
+		my $subcl_txt = File::Spec->catfile($tmp,sprintf($SUBCLONES_TXT,$options->{'tumour_name'}));
+    gzip $subcl_txt => "$subcl_txt.gz" or die "gzip failed: $GzipError\n";
     tmp_to_outdir($tmp, $outdir, $tumour_name,
                   $SUNRISE_PNG, $COPY_NO_PNG, $NON_ROUNDED_PNG, $ALT_COPY_NO_ROUNDED_PNG,
-                  $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $RHO_PSI_FILE,
-                  $NORMAL_CONTAMINATION_FILE, $SUBCLONES_TXT, $CELLULARITY_PLOIDY_TXT, $STATUS_TXT);
+                  $ALT_NON_ROUNDED_PNG, $SECOND_DISTANCE_PNG, $PROFILE_AVERAGE_PNG,
+                  $PROFILE_SUBCLONES_PNG, $RHO_PSI_FILE, $NORMAL_CONTAMINATION_FILE,
+                  "$SUBCLONES_TXT.gz", $CELLULARITY_PLOIDY_TXT, $STATUS_TXT, $SEED_TXT);
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['single_file_copy',0]});
 	}
@@ -1005,7 +1253,9 @@ sub tmp_to_outdir {
   for my $format(@formats) {
     my $from = File::Spec->catfile($tmp,sprintf($format,$tumour_name));
     my $to = File::Spec->catfile($outdir,sprintf($format,$tumour_name));
-    _copy_file($from,$to);
+    if (-e $from) {
+      _copy_file($from,$to);
+    }
   }
 }
 
@@ -1042,7 +1292,6 @@ sub _run_copy_number_to_vcf{
     $command .= " -sbm $options->{tumbam}";
     $command .= " -sbw $options->{normbam}";
   }
-
 	PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $command, 0);
   return;
 }
@@ -1072,7 +1321,6 @@ sub _generate_segmented_vcf{
 	open (my $fh_BAF, '<',$baf);
 	open (my $fh_logR,'<',$logr);
 	open (my $fhw, '>', $vcf_out);
-
 		my $vcf=Vcf->new();
 		$vcf->add_header_line({key=>'INFO',ID=>'BAFP', Number=>'1',Type=>'Float',Description=>"BAF:BAF values after phasing with Impute"});
 		$vcf->add_header_line({key=>'INFO',ID=>'BAFP', Number=>'1',Type=>'Float',Description=>"BAF:BAF values after phasing with Impute"});
@@ -1087,27 +1335,30 @@ sub _generate_segmented_vcf{
 		my %logR;
 		while(<$fh_logR>) {
 			my @f=split(/\s+/,$_);
-		 	$logR{$f[0]}=$f[3];
+      #use chr + pos as a unique index
+      my $index = join ':', $f[0], $f[1];
+		 	$logR{$index}=$f[2];
 		}
 		close($fh_logR);
 		while (<$fh_BAF>) {
 			chomp;
 			my @f=split(' ',$_);
-			if ($f[0]=~/snp/){
-				my %out;
-				if (!exists $logR{$f[0]}){
-					$logR{$f[0]}="NA";
-				}
-				$out{CHROM}  = $f[1];
-				$out{POS}    = $f[2];
-				$out{ID}     = $f[0];
-				$out{ALT}    = ['.'];
-				$out{REF}    = '.';
-				$out{QUAL}   = '.';
-				$out{FILTER} = ['.'];
-				$out{INFO}   = { BAFP=>$f[3], BAFE=>$f[4], BAFS=>$f[5], LOGR=>$logR{$f[0]} };
-				print $fhw $vcf->format_line(\%out) or die("Error printing line to vcf file.");
-			}
+      next if ($f[0] =~ /^Chromosome/);
+      my %out;
+      #use chr + pos as a unique index
+      my $index = join ':', $f[0], $f[1];
+     if (!exists $logR{$index}){
+        $logR{$index}="NA";
+      }
+      $out{CHROM}  = $f[0];
+      $out{POS}    = $f[1];
+      $out{ID}     = '.';
+      $out{ALT}    = ['.'];
+      $out{REF}    = '.';
+      $out{QUAL}   = '.';
+      $out{FILTER} = ['.'];
+      $out{INFO}   = { BAFP=>$f[2], BAFE=>$f[3], BAFS=>$f[4], LOGR=>$logR{$index} };
+      print $fhw $vcf->format_line(\%out) or die("Error printing line to vcf file.");
 		}
 
 		$vcf->close();
@@ -1189,6 +1440,21 @@ sub _writeNormalContaminationToFile{
 		print $FH ($normal_cont,"\n");
 	close($FH);
 	return;
+}
+
+sub _writeSeedToFile{
+  # uncoverable subroutine
+  my $options = shift;
+  my $outdir = $options->{'outdir'};
+  my $tmp = $options->{'tmp'};
+  my $sample_name = $options->{'tumour_name'};
+  my $seed = $options->{'seed'};
+  my $file = File::Spec->catfile($tmp,sprintf($SEED_TXT,$sample_name));
+  my $FH;
+  open($FH, '>', $file) || die("Error opening file '$file' for write: $!");
+  print $FH ($seed,"\n");
+  close($FH);
+  return;
 }
 
 sub _extractRhoPsiFromFile{
@@ -1388,6 +1654,34 @@ sub _lociNameMap {
     close $fh;
   }
   return $loci_names_to_index;
+}
+
+sub _get_chrom_names {
+  my ($impute_info_file, $is_male) = @_;
+
+  my @chroms;
+  open my $impute_fh, $impute_info_file or die "Unable to open $impute_info_file";
+  while (my $line = <$impute_fh>) {
+    chomp $line;
+    my ($chrom, $impute_legend, $genetic_map, $impute_hap, $start, $end, $is_par) = split "\t", $line;
+    if ($is_male && $is_par) {
+      push @chroms, $chrom;
+    } else {
+      push @chroms, $chrom;
+    }
+  }
+  close $impute_fh;
+  my @unique_chroms = uniq(@chroms);
+  return \@unique_chroms;
+}
+
+sub _get_chroms_as_string {
+  my ($impute_info_file, $is_male) = @_;
+
+  my $chroms = _get_chrom_names($impute_info_file, $is_male);
+  my @chroms_string = map {'"' . $_ . '"'} @$chroms;
+  my $chr_names = join ',', @chroms_string;
+  return $chr_names;
 }
 
 1;
