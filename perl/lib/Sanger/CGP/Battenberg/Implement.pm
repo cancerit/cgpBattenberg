@@ -166,7 +166,6 @@ const my $SEGMENTATION_GAMMA => 10;
 const my $PHASING_GAMMA => 1;
 const my $KMIN => 3;
 const my $PHASE_KMIN => 3;
-const my $CALC_SEG_BAF_OPTION => 1;
 
 #callsubclones
 const my $SIGLEVEL => 0.05;
@@ -800,7 +799,7 @@ sub battenberg_segmentphased{
   my $phasegamma = $PHASING_GAMMA;
   my $kmin = $KMIN;
   my $phasekmin = $PHASE_KMIN;
-  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+  my $calc_seg_baf_option = $options->{'calc_seg_baf_option'};
 
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
@@ -964,7 +963,7 @@ sub battenberg_callsubclones{
   my $siglevel = $SIGLEVEL;
   my $maxdist = $MAXDIST;
   my $noperms = $NOPERMS;
-  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+  my $calc_seg_baf_option = $options->{'calc_seg_baf_option'};
   my $seed = $options->{'seed'};
 
 	my $command = "cd $tmp; ";
