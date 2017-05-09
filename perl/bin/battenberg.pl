@@ -63,6 +63,7 @@ const my $DEFAULT_BALANCED_THRESHOLD=>0.51;
 const my $DEFAULT_PROTOCOL => 'WGS';
 const my $DEFAULT_PLATFORM => 'ILLUMINA';
 const my $DEFAULT_SEED => 1488823153;
+const my $DEFAULT_CALC_SEG_BAF_OPTION => 2; #Options are: 1 - median, 2 - mean.
 
 const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
 
@@ -190,6 +191,7 @@ sub setup {
           'nc|noclean' => \$opts{'noclean'},
           'nl|num_loci_files=i' => \$opts{'num_loci_files'},
           'se|seed=i' => \$opts{'seed'},
+          'sb|calc_seg_baf_option=i' => \$opts{'calc_seg_baf_option'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
@@ -394,7 +396,11 @@ sub setup {
 	$opts{'platform'} = $DEFAULT_PLATFORM if(!exists($opts{'platform'}) || !defined($opts{'platform'}));
 
   $opts{'seed'} = $DEFAULT_SEED if(!exists($opts{'seed'}) || !defined($opts{'seed'}));
+  $opts{'calc_seg_baf_option'} = $DEFAULT_CALC_SEG_BAF_OPTION if(!exists($opts{'calc_seg_baf_option'}) || !defined($opts{'calc_seg_baf_option'}));
 
+  if ($opts{'calc_seg_baf_option'} < 1 || $opts{'calc_seg_baf_option'} > 2) {
+    die "ERROR: calc_seg_baf_option (" . $opts{'calc_seg_baf_option'} . ") can have values 1 (median) or 2 (mean)\n";
+  }
 	return \%opts;
 }
 
@@ -450,6 +456,7 @@ battenberg.pl [options]
     -genderloci            -gl  List of gender loci, required when '-ge L' [share/gender/GRCh37d5_Y.loci]
                                 - these are loci that will not present at all in a female sample
     -seed                  -se Integer value to be used as a seed for random number generation [1488823153]
+    -calc_seg_baf_option   -sb Various options to recalculate the BAF of a segment. Options are: 1 - median, 2 - mean. (Default: 2)
 
    Optional system related parameters:
     -threads           -t   Number of threads allowed on this machine (default 1)

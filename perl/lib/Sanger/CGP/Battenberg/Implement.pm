@@ -166,7 +166,6 @@ const my $SEGMENTATION_GAMMA => 10;
 const my $PHASING_GAMMA => 1;
 const my $KMIN => 3;
 const my $PHASE_KMIN => 3;
-const my $CALC_SEG_BAF_OPTION => 1;
 
 #callsubclones
 const my $SIGLEVEL => 0.05;
@@ -800,7 +799,7 @@ sub battenberg_segmentphased{
   my $phasegamma = $PHASING_GAMMA;
   my $kmin = $KMIN;
   my $phasekmin = $PHASE_KMIN;
-  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+  my $calc_seg_baf_option = $options->{'calc_seg_baf_option'};
 
 	my $command = "cd $tmp; ";
 	$command .= _which($RSCRIPT) || die "Unable to find $RSCRIPT in path";
@@ -855,13 +854,11 @@ sub battenberg_fitcopyno{
   }
   my $rho_psi_cmds = q{};
   if (exists ($options->{'rho'}) && defined($options->{'rho'})){
-    #Sanity checks for psi and rho
-    #if ($options->{'rho'} < $options->{'min_rho'} || $options->{'rho'} > $options->{'max_rho'}) {
-    #  die("Invalid value for rho (" . $options->{'rho'} . "). This should be in the range specified by min_rho (" . $options->{'min_rho'} . ") and max_rho (" . $options->{'max_rho'} . ")");
-    #}
-    #if ($options->{'psi'} < $options->{'min_ploidy'} || $options->{'psi'} > $options->{'max_ploidy'}) {
-    #  die("Invalid value for ploidy (" . $options->{'psi'} . "). This should be in the range specified by min_ploidy (" . $options->{'min_ploidy'} . ") and max_ploidy (" . $options->{'max_ploidy'} . ")");
-    #}
+    #Sanity checks for rho only. Truncate to 5 decimal places for max comparison to allow for rounding issues
+    my $round_rho = sprintf("%.5f", $options->{'rho'});
+    if ($options->{'rho'} < $options->{'min_rho'} || $round_rho > $options->{'max_rho'}) {
+      die("Invalid value for rho (" . $round_rho . "). This should be in the range specified by min_rho (" . $options->{'min_rho'} . ") and max_rho (" . $options->{'max_rho'} . ")");
+    }
     $rho_psi_cmds .= ', use_preset_rho_psi=T';
     $rho_psi_cmds .= ', preset_rho='. $options->{'rho'};
     $rho_psi_cmds .= ', preset_psi=' . $options->{'psi'};
@@ -966,7 +963,7 @@ sub battenberg_callsubclones{
   my $siglevel = $SIGLEVEL;
   my $maxdist = $MAXDIST;
   my $noperms = $NOPERMS;
-  my $calc_seg_baf_option = $CALC_SEG_BAF_OPTION;
+  my $calc_seg_baf_option = $options->{'calc_seg_baf_option'};
   my $seed = $options->{'seed'};
 
 	my $command = "cd $tmp; ";
