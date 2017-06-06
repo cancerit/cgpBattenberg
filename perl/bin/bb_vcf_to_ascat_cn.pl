@@ -42,7 +42,9 @@ while(my $line = <$z>) {
   my ($end) = $info =~ m/END=([[:digit:]]+)/;
   my ($wt_total, $wt_minor) = $norm =~ m/^\.\/\.\:([[:digit:]]+):([[:digit:]]+)/;
   my ($mt_total, $mt_minor) = $tum =~ m/^\.\/\.\:([[:digit:]]+):([[:digit:]]+)/;
-  print join(q{,}, $count++, $chr, $start, $end, $wt_total, $wt_minor, $mt_total, $mt_minor),"\n";
+  if (defined $wt_total &&  defined $wt_minor && defined $mt_total && defined $mt_minor) {
+    print join(q{,}, $count++, $chr, $start, $end, $wt_total, $wt_minor, $mt_total, $mt_minor),"\n";
+  }
 }
 close($z);
 
