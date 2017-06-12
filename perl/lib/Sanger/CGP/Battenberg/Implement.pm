@@ -205,6 +205,13 @@ sub prepare {
 	$options->{'mod_path'} = get_mod_path();
 	$options->{'bat_path'} = File::Spec->catdir($options->{'mod_path'}, 'battenberg');
 	$options->{'tmp'} = File::Spec->rel2abs($options->{'tmp'});
+
+  $options->{'k_gen_loc'} = File::Spec->rel2abs($options->{'1kgenloc'});
+
+  #Get the appropriate loci file based on the index into the contigs array rather than the number
+  #of requested contigs. Need to set before using threads to avoid bug in perl 5.16.3
+  $options->{'loci_names_to_index'} = _lociNameMap($options->{'k_gen_loc'});
+
   return 1;
 }
 
@@ -337,16 +344,11 @@ sub battenberg_allelecount {
       my ($chr) = $loci_file =~ /$SPLIT_LOCI_REGEX/;
       $alleleCountOut = File::Spec->catfile($tmp, sprintf $SPLIT_ALLELE_COUNT_OUTPUT, $sample_name, $chr, $file_index);
     } else {
-      my $k_gen_loc = File::Spec->rel2abs($options->{'1kgenloc'});
-
-      #Get the appropriate loci file based on the index into the contigs array rather than the number
-      #of requested contigs
-      my $loci_names_to_index = _lociNameMap($k_gen_loc);
       my $contigs = read_contigs_from_file_with_ignore($options->{'reference'},$options->{'ignored_contigs'});
       my $this_contig = $contigs->[$file_index-1];
-      my $file_index = $loci_names_to_index->{$this_contig};
+      my $file_index = $options->{'loci_names_to_index'}->{$this_contig};
 
-      $loci_file = File::Spec->catfile($k_gen_loc,sprintf($ALLELE_LOCI_NAME,$file_index));
+      $loci_file = File::Spec->catfile($options->{'k_gen_loc'},sprintf($ALLELE_LOCI_NAME,$file_index));
       $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sample_name,$file_index)));
     }
 
