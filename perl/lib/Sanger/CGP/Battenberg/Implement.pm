@@ -51,7 +51,7 @@ use PCAP::Bam;
 
 use Data::Dumper;
 
-const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d -r %s};
+const my $ALLELE_COUNT_CMD => q{ -l %s -b %s -o %s -m %d -r %s -d};
 const my $RUN_FUNC => q{ -e '%s %s'};
 const my $SOURCE => q{source("%s"); };
 const my $LIBRARY => q{library(Battenberg);};
