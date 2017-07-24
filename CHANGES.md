@@ -1,3 +1,7 @@
+### 3.1.0
+* Use newer alleleCount that includes faster 'dense snps' option
+* Minor modification to README.md layout
+
 ### 3.0.2
 * Moved call to create 1000genome loci filename hash to before use of threads to avoid glob bug in perl 5.16.3
 
