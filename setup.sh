@@ -21,6 +21,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
+EXP_ACV="3.3.0"
+
+version_gt () {
+  test $(printf '%s\n' $@ | sort -V | head -n 1) == "$1";
+}
+
 if [[ ($# -ne 1 && $# -ne 2) ]] ; then
   echo "Please provide an installation path such as /opt/pancan and optionally perl lib paths to allow, e.g."
   echo "  ./setup.sh /opt/myBundle"
@@ -88,23 +94,31 @@ set +e
 PCAP=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' PCAP`
 if [[ "x$PCAP" == "x" ]] ; then
   echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding:"
-  echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+  echo "  https://github.com/cancerit/PCAP-core/releases"
   exit 1;
 else
   # need the leading 'v' on versions so comparison of those that don't have hotfix element behave correctly, i.e. (X.X, rather than X.X.X)
   GOOD_VER=`perl -Mversion -e "version->parse(q{v$PCAP}) >= version->parse(q{v}.q{1.12}) ? print qq{1\n} : print qq{0\n};"`
   if [ $GOOD_VER -ne 1 ]; then
     echo "PREREQUISITE: Please install PCAP-core (v1.12+) before proceeding (version too old):"
-    echo "  https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases"
+    echo "  https://github.com/cancerit/PCAP-core/releases"
     exit 1;
   fi
 fi
 
 AC=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::AlleleCount`
 if [[ "x$AC" == "x" ]] ; then
-  echo "PREREQUISITE: Please install alleleCount before proceeding:"
+  echo "PREREQUISITE: Please install alleleCount version >= $EXP_ACV before proceeding:"
   echo "  https://github.com/cancerit/alleleCount/releases"
   exit 1;
+else
+  if version_gt $AC $EXP_ACV; then
+    echo "  alleleCounter version is good ($AC)"
+  else
+    echo "PREREQUISITE: Please install alleleCount version >= $EXP_ACV before proceeding (Found version $AC):"
+    echo "  https://github.com/cancerit/alleleCount/releases"
+    exit 1;
+  fi
 fi
 
 VCF=`perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' Sanger::CGP::Vcf`
