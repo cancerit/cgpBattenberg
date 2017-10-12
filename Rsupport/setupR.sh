@@ -82,8 +82,9 @@ if [ "x$BUILD_R" != "x" ]; then
 fi
 
 wget https://github.com/Crick-CancerGenomics/ascat/releases/download/v2.4.3/ASCAT_2.4.3.tar.gz
+wget https://github.com/Wedge-Oxford/battenberg/archive/v2.2.5.tar.gz
 
-Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_2.4.3.tar.gz $BATTENBERG_PACKAGE
+Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_2.4.3.tar.gz $TMP_DIR/v2.2.5.tar.gz
 
 cd $INIT_DIR
 rm -rf $TMP_DIR
