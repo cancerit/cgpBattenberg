@@ -24,7 +24,7 @@
 EXP_ACV="3.3.0"
 
 version_gt () {
-  test $(printf '%s\n' $@ | sort -V | head -n 1) == "$1";
+  test $(printf '%s\n' $@ | sort -V | head -n 1) == "$EXP_ACV";
 }
 
 if [[ ($# -ne 1 && $# -ne 2) ]] ; then
