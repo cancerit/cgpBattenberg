@@ -9,11 +9,11 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 
 ## Installation
 
-The battenberg R files are not included in this repository. The perl wrapper supports battenberg v2.2.5 and this will be made publically available by the authors shortly. The last version of this repository to include the battenberg R files is 1.5.3
+The battenberg R files are installed automatically from the Battenberg GitHub repository found [here](https://github.com/Wedge-Oxford/battenberg). The linked version is currently [`v2.2.5`](https://github.com/Wedge-Oxford/battenberg/releases/tag/v2.2.5).
 
 Please install the following before attempting to run ``setup.sh <install_to_folder> [X/lib/perl:Y/lib/perl]``
 
-1. [PCAP-core v2.1.3+](https://github.com/ICGC-TCGA-PanCancer/PCAP-core/releases)
+1. [PCAP-core v2.1.3+](https://github.com/cancerit/PCAP-core/releases)
 2. [alleleCount v3.0.1+](https://github.com/cancerit/alleleCount/releases)
 3. [cgpVcf v2.0.1+](https://github.com/cancerit/cgpVcf/releases)
 

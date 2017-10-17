@@ -1,3 +1,6 @@
+### 3.2.0
+* Install Battenberg R code from GitHub
+
 ### 3.1.0
 * Use newer alleleCount that includes faster 'dense snps' option
 * Minor modification to README.md layout
