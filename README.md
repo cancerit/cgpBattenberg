@@ -8,7 +8,7 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 | [![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=master)](https://travis-ci.org/cancerit/cgpBattenberg) | [![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=dev)](https://travis-ci.org/cancerit/cgpBattenberg) |
 
 ## Battenberg R code
-The Battenberg R code is developed and maintained in a separate repository [here] (https://github.com/Wedge-Oxford/battenberg) and this is where any questions or issues specific to the R code should be directed.
+The Battenberg R code is developed and maintained in a separate repository [here](https://github.com/Wedge-Oxford/battenberg) and this is where any questions or issues specific to the R code should be directed.
 
 ## Installation
 
