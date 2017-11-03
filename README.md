@@ -7,6 +7,9 @@ An installation helper, perl wrapper and the R program Battenberg which detects 
 |---|---|
 | [![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=master)](https://travis-ci.org/cancerit/cgpBattenberg) | [![Build Status](https://travis-ci.org/cancerit/cgpBattenberg.svg?branch=dev)](https://travis-ci.org/cancerit/cgpBattenberg) |
 
+## Battenberg R code
+The Battenberg R code is developed and maintained in a separate repository [here] (https://github.com/Wedge-Oxford/battenberg) and this is where any questions or issues specific to the R code should be directed.
+
 ## Installation
 
 The battenberg R files are installed automatically from the Battenberg GitHub repository found [here](https://github.com/Wedge-Oxford/battenberg). The linked version is currently [`v2.2.5`](https://github.com/Wedge-Oxford/battenberg/releases/tag/v2.2.5).
@@ -27,7 +30,7 @@ All of the items listed here use the same install method.
 * Reference.fasta and index
 * A file containing a list of contigs in the reference .fai to ignore
 
-Some required data files are not inclued in the distribution but a script is included to generate these for you:
+Some required data files are not included in the distribution but a script is included to generate these for you:
 
 * Directory containing the 1000 genomes allele and loci data:
   * Generated using the included script ``download_generate_bberg_ref_files.pl``
@@ -36,13 +39,15 @@ Some required data files are not inclued in the distribution but a script is inc
 * Prob loci file probloci.txt
   * Included: ``files/probloci.txt.gz``
 
+Additionally, the wgs_gc_correction_1000g files need to be downloaded. These can be obtained from the Battenberg R code site [here](https://github.com/Wedge-Oxford/battenberg#required-reference-files).
+
 ## Program Run Instructions
 
 For the most up to date usage instructions for the wrapper code please see the command line help:
 
     battenberg.pl -h
 
-
+Please check the [wiki](https://github.com/cancerit/cgpBattenberg/wiki) for common problems before raising any issues.
 
 ----
 
