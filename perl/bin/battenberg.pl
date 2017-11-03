@@ -427,6 +427,7 @@ battenberg.pl [options]
     -thousand-genomes-loc  -u   Location of the directory containing 1k genomes data
     -ignore-contigs-file   -ig  File containing contigs to ignore
                                 - specifically male sex chromosome, mitochondria and non primary contigs
+    -gc-correction-loc     -gc  Path to gc correction files
 
    Optional parameters:
     -allele-counts         -a   Provide a tar.gz containing the impute allele counts
@@ -523,9 +524,14 @@ Path to mapped, indexed, duplicate marked/removed tumour bam file.
 
 Path to mapped, indexed, duplicate marked/removed normal bam file.
 
+=item B<-gc-correction-loc>
+
+Directory containing the gc-correction files
+
 =item B<-ignore-contigs-file>
 
-Path to ignore file containing a list of contigs to ignore
+Path to ignore file containing a list of contig names to ignore, one contig per line. This should
+contain the male sex chromosome, mitochondria and non primary contigs
 
 =item B<-is-male>
 
