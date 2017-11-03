@@ -1,3 +1,6 @@
+### 3.2.2
+* Fix to README rendering of link
+
 ### 3.2.1
 * Updates to documentation
 
