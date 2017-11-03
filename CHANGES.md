@@ -1,3 +1,6 @@
+### 3.2.1
+* Updates to documentation
+
 ### 3.2.0
 * Install Battenberg R code from GitHub
 
