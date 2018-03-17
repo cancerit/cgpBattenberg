@@ -271,6 +271,10 @@ sub setup {
 		pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
   }
 
+  if($opts{'reference'} !~ m/\.fai$/) {
+    warn "Automatically appending '.fai' to end of '-reference' option (see usage)\n";
+    $opts{'reference'} .= '.fai';
+  }
   PCAP::Cli::file_for_reading('reference',$opts{'reference'});
 
   my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
@@ -680,4 +684,3 @@ Splitting the number of thousand genome loci files into a larger number of small
 B<battenberg.pl> will attempt to run all caveman steps automatically including collation of output files.
 
 =cut
-
