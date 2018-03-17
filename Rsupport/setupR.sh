@@ -89,7 +89,7 @@ fi
 wget https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz
 wget https://github.com/Wedge-Oxford/battenberg/archive/$VERSION_BB.tar.gz
 
-Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_${VERSION_ASCAT}.tar.gz $TMP_DIR/$VERSION_BB.tar.gz
+Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_${VERSION_ASCAT}.tar.gz $TMP_DIR/$VERSION_BB.tar.gz 2>&1 | grep '^\*'
 
 cd $INIT_DIR
 rm -rf $TMP_DIR
