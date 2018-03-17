@@ -4,12 +4,12 @@ ascatPackage = args[2]
 battenbergPackage = args[3]
 
 #Use previous version because current version in cran is not compatible with R < 3.2 (dir.exists).
-stringi_for_legacyR = "1.1.2"
+stringi_for_legacyR = "http://cran.uk.r-project.org/src/contrib/Archive/stringi/stringi_1.1.2.tar.gz"
 
 ipak <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg))
-    biocLite(new.pkg, ask=FALSE, lib=instLib)
+    biocLite(new.pkg, ask=FALSE, lib=instLib, lib.loc=instLib)
   sapply(pkg, library, character.only = TRUE)
 }
 
@@ -19,18 +19,18 @@ options(repos = r)
 rm(r)
 source("http://bioconductor.org/biocLite.R")
 
-tmp <- c("devtools")
-ipak(tmp)
+biocPackages <- c("devtools")
+ipak(biocPackages)
 library(devtools)
 options(download.file.method = "auto")
 
-if ( version$major >= 3 && version$minor >= 2 ) {
+if ( version$major > 3 || ( version$major == 3 && version$minor >= 2 )) {
   biocPackages <- c("stringi", "readr", "doParallel", "ggplot2", "RColorBrewer", "gridExtra", "gtools")
 } else {
-  install_version("stringi", stringi_for_legacyR)
+  install.packages(stringi_for_legacyR, repos=NULL, type="source")
   biocPackages <- c("readr", "doParallel", "ggplot2", "RColorBrewer", "gridExtra", "gtools")
 }
 
 ipak(biocPackages)
-install_file(ascatPackage)
-install_file(battenbergPackage)
+install.packages(ascatPackage)
+install.packages(battenbergPackage)
