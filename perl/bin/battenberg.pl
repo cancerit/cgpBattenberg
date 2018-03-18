@@ -192,10 +192,16 @@ sub setup {
           'nl|num_loci_files=i' => \$opts{'num_loci_files'},
           'se|seed=i' => \$opts{'seed'},
           'sb|calc_seg_baf_option=i' => \$opts{'calc_seg_baf_option'},
+          'v|version' => \$opts{'version'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
   pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
+
+  if(defined $opts{'v'}) {
+    print 'Version: '.Sanger::CGP::Battenberg->VERSION,"\n";
+    exit 0;
+  }
 
   # then check for no args:
   my $defined;
@@ -475,6 +481,7 @@ battenberg.pl [options]
     -num_loci_files -nl Split the 1000genomes loci files into this many files. Defining a value less than the number of loci files will have no effect.
 
    Other:
+    -version  -v  Version.
     -help     -h  Brief help message.
     -man      -m  Full documentation.
 
