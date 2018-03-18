@@ -198,7 +198,7 @@ sub setup {
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
   pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
 
-  if(defined $opts{'v'}) {
+  if(defined $opts{'version'}) {
     print 'Version: '.Sanger::CGP::Battenberg->VERSION,"\n";
     exit 0;
   }
