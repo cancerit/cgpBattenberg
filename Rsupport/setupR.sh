@@ -84,12 +84,10 @@ if [ "x$BUILD_R" != "x" ]; then
   cd $TMP_DIR
 fi
 
+curl -sSL https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz > ascat_R.tar.gz
+curl -sSL https://github.com/Wedge-Oxford/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
 
-
-wget https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz
-wget https://github.com/Wedge-Oxford/battenberg/archive/$VERSION_BB.tar.gz
-
-Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_${VERSION_ASCAT}.tar.gz $TMP_DIR/$VERSION_BB.tar.gz 2>&1 | grep '^\*'
+Rscript $INIT_DIR/libInstall.R $R_LIBS_USER ascat_R.tar.gz BB_R.tar.gz 2>&1 | grep '^\*'
 
 cd $INIT_DIR
 rm -rf $TMP_DIR
