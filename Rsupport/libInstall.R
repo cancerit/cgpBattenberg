@@ -3,8 +3,8 @@ instLib = args[1]
 ascatPackage = args[2]
 battenbergPackage = args[3]
 
-#Use previous version because current version in cran is not compatible with R < 3.2 (dir.exists).
-stringi_for_legacyR = "http://cran.uk.r-project.org/src/contrib/Archive/stringi/stringi_1.1.2.tar.gz"
+#Use earier version because current version in cran is not compatible with R < 3.2 (dir.exists).
+stringi_for_legacyR = "http://cran.uk.r-project.org/src/contrib/Archive/stringi/stringi_1.1.6.tar.gz"
 
 ipak <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
@@ -25,12 +25,17 @@ library(devtools)
 options(download.file.method = "auto")
 
 if ( version$major > 3 || ( version$major == 3 && version$minor >= 2 )) {
-  biocPackages <- c("stringi", "readr", "doParallel", "ggplot2", "RColorBrewer", "gridExtra", "gtools")
+  ipak(c("stringi"))
 } else {
   install.packages(stringi_for_legacyR, repos=NULL, type="source")
-  biocPackages <- c("readr", "doParallel", "ggplot2", "RColorBrewer", "gridExtra", "gtools")
 }
 
-ipak(biocPackages)
+ipak("readr")
+ipak("ggplot2")
+ipak("doParallel")
+ipak("RColorBrewer")
+ipak("gridExtra")
+ipak("gtools")
+
 install.packages(ascatPackage)
 install.packages(battenbergPackage)
