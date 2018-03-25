@@ -123,7 +123,7 @@ identical to a statement that reads 'Copyright (c) 2005, 2006, 2007, 2008,
 <!-- refs -->
 [pcap-core-rel]: https://github.com/cancerit/PCAP-core/releases
 [allele-count-rel]: https://github.com/cancerit/alleleCount/releases
-[cgpvcf-ref]: https://github.com/cancerit/cgpVcf/releases
+[cgpvcf-rel]: https://github.com/cancerit/cgpVcf/releases
 [impute-exe]: https://mathgen.stats.ox.ac.uk/impute/impute_v2.html
 [bb-ref]: https://github.com/Wedge-Oxford/battenberg#required-reference-files
 [cgpbb-wiki]: https://github.com/cancerit/cgpBattenberg/wiki
