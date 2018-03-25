@@ -1,9 +1,9 @@
 package Sanger::CGP::Battenberg::Implement;
 
 ##########LICENCE##########
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Cancer Genome Project cgpit@sanger.ac.uk
+# Author: Cancer Genome Project <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpBattenberg.
 #

@@ -1,7 +1,7 @@
 ##########LICENCE##########
-# Copyright (c) 2014-2017 Genome Research Ltd.
+# Copyright (c) 2014-2018 Genome Research Ltd.
 #
-# Author: Cancer Genome Project cgpit@sanger.ac.uk
+# Author: Cancer Genome Project <cgphelp@sanger.ac.uk>
 #
 # This file is part of cgpBattenberg.
 #
@@ -25,7 +25,7 @@ use strict;
 
 use Const::Fast qw(const);
 use base 'Exporter';
-our $VERSION = '3.2.2';
+our $VERSION = '3.3.0';
 our @EXPORT = qw($VERSION);
 
 1;
