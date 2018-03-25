@@ -192,10 +192,16 @@ sub setup {
           'nl|num_loci_files=i' => \$opts{'num_loci_files'},
           'se|seed=i' => \$opts{'seed'},
           'sb|calc_seg_baf_option=i' => \$opts{'calc_seg_baf_option'},
+          'v|version' => \$opts{'version'},
 		) or pod2usage(2);
 
 	pod2usage(-verbose => 0, -exitval => 0) if(defined $opts{'h'});
   pod2usage(-verbose => 2, -exitval => 0) if(defined $opts{'m'});
+
+  if(defined $opts{'version'}) {
+    print 'Version: '.Sanger::CGP::Battenberg->VERSION,"\n";
+    exit 0;
+  }
 
   # then check for no args:
   my $defined;
@@ -271,6 +277,10 @@ sub setup {
 		pod2usage(-msg  => "\nERROR: Invalid pr|protocol '$opts{protocol}'.\n", -verbose => 1,  -output => \*STDERR) if($bad_prot);
   }
 
+  if($opts{'reference'} !~ m/\.fai$/) {
+    warn "Automatically appending '.fai' to end of '-reference' option (see usage)\n";
+    $opts{'reference'} .= '.fai';
+  }
   PCAP::Cli::file_for_reading('reference',$opts{'reference'});
 
   my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
@@ -471,6 +481,7 @@ battenberg.pl [options]
     -num_loci_files -nl Split the 1000genomes loci files into this many files. Defining a value less than the number of loci files will have no effect.
 
    Other:
+    -version  -v  Version.
     -help     -h  Brief help message.
     -man      -m  Full documentation.
 
@@ -680,4 +691,3 @@ Splitting the number of thousand genome loci files into a larger number of small
 B<battenberg.pl> will attempt to run all caveman steps automatically including collation of output files.
 
 =cut
-

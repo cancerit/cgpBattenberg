@@ -40,6 +40,9 @@ fi
 INST_PATH=$1
 BUILD_R=$2
 
+VERSION_ASCAT='2.5.1' # no 'v', not a project archive an artifact
+VERSION_BB='v2.2.8' # with 'v', this is a project archive
+
 CPU=`grep -c ^processor /proc/cpuinfo`
 if [ $? -eq 0 ]; then
   if [ "$CPU" -gt "6" ]; then
@@ -81,10 +84,10 @@ if [ "x$BUILD_R" != "x" ]; then
   cd $TMP_DIR
 fi
 
-wget https://github.com/Crick-CancerGenomics/ascat/releases/download/v2.4.3/ASCAT_2.4.3.tar.gz
-wget https://github.com/Wedge-Oxford/battenberg/archive/v2.2.5.tar.gz
+curl -sSL https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz > ascat_R.tar.gz
+curl -sSL https://github.com/Wedge-Oxford/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
 
-Rscript $INIT_DIR/libInstall.R $R_LIBS_USER $TMP_DIR/ASCAT_2.4.3.tar.gz $TMP_DIR/v2.2.5.tar.gz
+Rscript $INIT_DIR/libInstall.R $R_LIBS_USER ascat_R.tar.gz BB_R.tar.gz 2>&1 | grep '^\*'
 
 cd $INIT_DIR
 rm -rf $TMP_DIR
