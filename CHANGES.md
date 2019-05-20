@@ -1,5 +1,11 @@
 # Changes
 
+## 3.3.1
+
+* Fixed bug when creating split loci files which would occasionally count wrongly due to rounding errors. Fixed the cause of the rounding error and added a sort to the hash.
+* Added check that the number of split loci files is at least the number of required contigs
+
+
 ## 3.3.0
 
 * Upgrade to Battenberg [v2.2.8](https://github.com/Wedge-Oxford/battenberg/releases/tag/v2.2.8).

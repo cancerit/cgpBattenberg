@@ -20,6 +20,8 @@ addons:
     - time
     - curl
     - r-base-dev
+    - libgd-dev
+    - libdb-dev
 
 install: true
 

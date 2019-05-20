@@ -292,6 +292,9 @@ sub setup {
     $opts{'num_loci_files'} = $no_of_jobs;
     $loci_files_defined = 0;
   }
+  if ($opts{'num_loci_files'} < $no_of_jobs) {
+    die "ERROR: Please define at least as many loci files (" . $opts{'num_loci_files'} . ") as required contigs ($no_of_jobs)";
+  }
 
 	if(exists $opts{'process'}) {
     PCAP::Cli::valid_process('process', $opts{'process'}, \@VALID_PROCESS);
