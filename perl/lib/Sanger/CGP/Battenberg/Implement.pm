@@ -239,8 +239,7 @@ sub battenberg_splitlocifiles {
   my $num_loci_per_split = $total_loci_remaining / $num_loci_files;
 
   my $total_number_of_split_files_created = 0;
-
-  foreach my $file (keys %$loci_per_file) {
+  foreach my $file (sort keys %$loci_per_file) {
 
     #Check if we are at the last file
     my $number_of_split_files_for_chr;
@@ -248,20 +247,21 @@ sub battenberg_splitlocifiles {
       #Set last file to be what is left
       $number_of_split_files_for_chr = $requested_num_loci_files - $total_number_of_split_files_created;
     } else {
-      $number_of_split_files_for_chr = int($loci_per_file->{$file} / $num_loci_per_split);
+      $number_of_split_files_for_chr = $loci_per_file->{$file} / $num_loci_per_split;
     }
 
     #Must have each file at least once
-    if ($number_of_split_files_for_chr == 0) {
-      $number_of_split_files_for_chr = 1;
-    }
     #print "file=$file " . $loci_per_file->{$file} . " $number_of_split_files_for_chr $total_number_of_split_files_created\n";
+    my $int_number_of_split_files_for_chr = int($number_of_split_files_for_chr);
+    if ($int_number_of_split_files_for_chr < 1) {
+      $int_number_of_split_files_for_chr = 1;
+    }
 
     #Write split loci files to the tmpdir
-    _create_split_files($file, $loci_per_file->{$file}, $number_of_split_files_for_chr, $tmp, $total_number_of_split_files_created);
+    _create_split_files($file, $loci_per_file->{$file}, $int_number_of_split_files_for_chr, $tmp, $total_number_of_split_files_created);
 
     #Keep track of the total number of files created
-    $total_number_of_split_files_created += $number_of_split_files_for_chr;
+    $total_number_of_split_files_created += $int_number_of_split_files_for_chr;
 
     #Need to keep refining the answer to avoid problems with rounding
     if ($num_loci_files > $number_of_split_files_for_chr) {
@@ -270,7 +270,7 @@ sub battenberg_splitlocifiles {
   }
 
   if ($total_number_of_split_files_created != $requested_num_loci_files) {
-    die("The number of loci files created $total_number_of_split_files_created is not the same as the number requested $num_loci_files\n");
+    die("The number of loci files created $total_number_of_split_files_created is not the same as the number requested $requested_num_loci_files\n");
   }
   return PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), 0);
 }
