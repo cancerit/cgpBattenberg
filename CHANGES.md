@@ -1,10 +1,13 @@
 # Changes
 
+## Next
+
+* Changes required for use with GRCh38 compatible Barrenberg R.
+
 ## 3.3.1
 
 * Fixed bug when creating split loci files which would occasionally count wrongly due to rounding errors. Fixed the cause of the rounding error and added a sort to the hash.
 * Added check that the number of split loci files is at least the number of required contigs
-
 
 ## 3.3.0
 
