@@ -283,8 +283,9 @@ sub setup {
   }
   PCAP::Cli::file_for_reading('reference',$opts{'reference'});
 
-  my $no_of_jobs = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
+  my ($no_of_jobs, $contig_list) = Sanger::CGP::Battenberg::Implement::file_line_count_with_ignore($opts{'reference'},$opts{'ignored_contigs'});
   $opts{'job_count'} = $no_of_jobs;
+  $opts{'contig_list'} = $contig_list;
 
   #Set number of loci files to be the number of chromosomes if not set
   my $loci_files_defined = 1;
