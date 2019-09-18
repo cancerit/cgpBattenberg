@@ -26,4 +26,7 @@ script:
   - docker run -t --rm battenberg Rscript -e 'library(Battenberg)'
   - docker run -t --rm battenberg battenberg.pl -v
   - docker run -t --rm battenberg battenberg_version.pl
+  - docker run -t --rm battenberg battenberg_CN_to_VCF.pl -v
+  - docker run -t --rm battenberg bb_vcf_to_ascat_cn.pl
+  - docker run -t --rm battenberg download_generate_bberg_ref_files.pl -v
 
