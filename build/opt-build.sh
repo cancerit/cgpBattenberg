@@ -100,3 +100,16 @@ if [ ! -e $SETUP_DIR/alleleCount.success ]; then
   rm -rf distro.* distro/*  
   touch $SETUP_DIR/alleleCounter.success
 fi
+
+### impute2
+if [ ! -e $SETUP_DIR/impute2.success ]; then
+  curl -sSL --retry 10 https://mathgen.stats.ox.ac.uk/impute/impute_${VER_IMPUTE2}_x86_64_dynamic.tgz > distro.tar.gz
+  rm -rf distro/*
+  tar --no-same-owner --strip-components 1 -C distro -xzf distro.tar.gz
+  cd $SETUP_DIR
+  chmod 0755 $SETUP_DIR/distro/impute2
+  cp $SETUP_DIR/distro/impute2 $INST_PATH/bin/.
+  cd $SETUP_DIR
+  rm -rf distro.* distro/*  
+  touch $SETUP_DIR/impute2.success
+fi

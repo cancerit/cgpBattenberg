@@ -24,6 +24,8 @@ script:
   - echo 'Verify program(s) from this repo'
   - docker run -t --rm battenberg Rscript -e 'library(ASCAT)'
   - docker run -t --rm battenberg Rscript -e 'library(Battenberg)'
+    #impute2 shows ERROR in stdout but it doesn't raise an exception
+  - docker run -t --rm battenberg impute2     
   - docker run -t --rm battenberg battenberg.pl -v
   - docker run -t --rm battenberg battenberg_version.pl
   - docker run -t --rm battenberg battenberg_CN_to_VCF.pl -v
