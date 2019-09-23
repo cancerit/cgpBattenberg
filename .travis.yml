@@ -22,10 +22,11 @@ script:
   - docker run -t --rm battenberg samtools --version
   - docker run -t --rm battenberg bash -c 'bwa 2>&1 | grep Version'
   - echo 'Verify program(s) from this repo'
+    #Check library dependencies for impute2
+  - echo '   Check dependencies for impute2'
+  - docker run -t --rm battenberg ! ldd /opt/wtsi-cgp/bin/impute2 | grep "not found"
   - docker run -t --rm battenberg Rscript -e 'library(ASCAT)'
-  - docker run -t --rm battenberg Rscript -e 'library(Battenberg)'
-    #impute2 shows ERROR in stdout but it doesn't raise an exception
-  - docker run -t --rm battenberg impute2     
+  - docker run -t --rm battenberg Rscript -e 'library(Battenberg)'   
   - docker run -t --rm battenberg battenberg.pl -v
   - docker run -t --rm battenberg battenberg_version.pl
   - docker run -t --rm battenberg battenberg_CN_to_VCF.pl -v
