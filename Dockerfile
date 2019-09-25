@@ -5,7 +5,7 @@ USER  root
 # ALL tool versions used by opt-build.sh
 ENV VER_ALLELECOUNT="4.1.0"
 ENV VER_CGPVCF="v2.2.1"
-ENV VER_IMPUTE2="v2.3.2"
+ENV VER_IMPUTE2="v2.3.0"
 
 RUN apt-get -yq update
 RUN apt-get install -yq --no-install-recommends \
