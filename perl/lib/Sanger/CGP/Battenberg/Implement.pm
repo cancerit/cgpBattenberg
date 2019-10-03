@@ -1301,17 +1301,22 @@ sub _bgzip_tabix_vcf{
 	my ($options,$vcf) = @_;
 	my $tmp = $options->{'tmp'};
 	my $vcf_gz = $vcf.'.gz';
-  my $bgzip = _which('bgzip');
-  $bgzip .= sprintf ' -c %s > %s', $vcf, $vcf_gz;
+    my $vcftmp = $vcf.'.tmp';
 
-  my $tabix = _which('tabix');
-  $tabix .= sprintf ' -p vcf %s', $vcf_gz;
+    my $vcfsort = _which('vcf-sort');
+    $vcfsort .= sprintf ' %s > %s', $vcf, $vcftmp;
+    
+    my $bgzip = _which('bgzip');
+    $bgzip .= sprintf ' -c %s > %s', $vcftmp, $vcf_gz;
 
-  my @commands = [$bgzip, $tabix];
+    my $tabix = _which('tabix');
+    $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
-  return;
+    my @commands = [$vcfsort, $bgzip, $tabix];
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $vcfsort, 0);
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
+    return;
 }
 
 sub _generate_segmented_vcf{
