@@ -2,54 +2,33 @@ notifications:
   slack: wtsi-cgpit:ptUMR1tkNyZJYd9TpGoss8WR
   email: false
 
-env:
- - CC=gcc
+sudo: false
 
-addons:
- apt:
-  packages:
-    - build-essential # everything
-    - autoconf # biobambam
-    - libtool # biobambam
-    - zlib1g-dev # many
-    - libcurl4-openssl-dev # many
-    - nettle-dev # cgpBigWig
-    - libncurses5-dev # samtools
-    - unzip # kentools/pcap
-    - libcairo2-dev # give png.h for kentsrc and used by R in later components
-    - time
-    - curl
-    - r-base-dev
-    - libgd-dev
-    - libdb-dev
+language: ruby
 
-install: true
-
-language: perl
-
-perl:
- - "5.22"
+services:
+  - docker
 
 script:
- - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/cgpBigWig.git
- - cd cgpBigWig
- - ./setup.sh $HOME/PCAP-opt
- - cd ../
- - git clone --depth 1 --single-branch --branch develop https://github.com/cancerit/PCAP-core.git
- - cd PCAP-core
- - ./setup.sh $HOME/PCAP-opt
- - cd ../
- - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/cgpVcf.git
- - cd cgpVcf
- - ./setup.sh $HOME/cgpVcf-opt $HOME/PCAP-opt/lib/perl5
- - cd ../
- - git clone --depth 1 --single-branch --branch dev https://github.com/cancerit/alleleCount.git
- - cd alleleCount
- - ./setup.sh $HOME/alleleCount-opt $HOME/cgpVcf-opt/lib/perl5:$HOME/PCAP-opt/lib/perl5
- - cd ../
- - ./setup.sh $HOME/cgpBattenberg-opt $HOME/alleleCount-opt/lib/perl5:$HOME/cgpVcf-opt/lib/perl5:$HOME/PCAP-opt/lib/perl5
- - cd Rsupport
- - ./setupR.sh $HOME/cgpBattenberg-opt
-
-dist: trusty
-sudo: false
+  - set -e
+  - echo 'Build and check docker image'
+  - docker build -t battenberg .
+  - docker images | grep -c battenberg
+  - echo 'Verify program(s) from each inherited base image - dockstore-cgpbigwig'
+  - docker run -t --rm battenberg bwjoin --version
+  - echo 'Verify program(s) from each inherited base image - dockstore-cgpmap'
+  - docker run -t --rm battenberg bwa_mem.pl -version
+  - docker run -t --rm battenberg bammarkduplicates2 --version
+  - docker run -t --rm battenberg samtools --version
+  - docker run -t --rm battenberg bash -c 'bwa 2>&1 | grep Version'
+    #Check library dependencies for impute2
+  - echo 'Check libray dependencies for impute2'
+  - docker run -t --rm battenberg bash -c "! ldd /opt/wtsi-cgp/bin/impute2 | grep 'not found'"
+  - echo 'Verify program(s) from this repo'    
+  - docker run -t --rm battenberg Rscript -e 'library(ASCAT)'
+  - docker run -t --rm battenberg Rscript -e 'library(Battenberg)'   
+  - docker run -t --rm battenberg battenberg.pl -v
+  - docker run -t --rm battenberg battenberg_version.pl
+  - docker run -t --rm battenberg battenberg_CN_to_VCF.pl -v
+  - docker run -t --rm battenberg download_generate_bberg_ref_files.pl -v
+  - docker run -t --rm battenberg ls /opt/wtsi-cgp/bin/bb_vcf_to_ascat_cn.pl
