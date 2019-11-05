@@ -26,6 +26,7 @@ use strict;
 
 use warnings FATAL => 'all';
 use autodie qw(:all);
+use Data::Dumper;
 use Const::Fast qw(const);
 use Cwd qw(abs_path getcwd);
 use File::Basename;
@@ -57,19 +58,19 @@ const my $SOURCE => q{source("%s"); };
 const my $LIBRARY => q{library(Battenberg);};
 const my $RUN_BAF_LOG => q{ getBAFsAndLogRs(tumourAlleleCountsFile.prefix="%s", normalAlleleCountsFile.prefix="%s", figuresFile.prefix="%s", BAFnormalFile="%s", BAFmutantFile="%s", logRnormalFile="%s", logRmutantFile="%s", combinedAlleleCountsFile="%s", %s, g1000file.prefix="%s", minCounts=%s, samplename="%s", seed=%s) };
 const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s", %s) };
-const my $IMPUTE_FROM_AF => q{ generate.impute.input.wgs(chrom=%s, tumour.allele.counts.file="%s", normal.allele.counts.file="%s", output.file="%s", imputeinfofile="%s", is.male="%s", problemLociFile="%s", useLociFile=%s, heterozygousFilter=%s) };
-const my $RUN_IMPUTE => q{ run.impute(inputfile="%s", outputfile.prefix="%s", is.male="%s", imputeinfofile="%s", impute.exe="%s", region.size=%s, chrom=%s, seed=%s)};
-const my $COMBINE_IMPUTE => q{ combine.impute.output(inputfile.prefix="%s", outputfile="%s", is.male="%s", imputeinfofile="%s", region.size=%s, chrom=%s ) };
+const my $IMPUTE_FROM_AF => q{ generate.impute.input.wgs(chrom="%s", tumour.allele.counts.file="%s", normal.allele.counts.file="%s", output.file="%s", imputeinfofile="%s", is.male="%s", problemLociFile="%s", useLociFile=%s, heterozygousFilter=%s) };
+const my $RUN_IMPUTE => q{ run.impute(inputfile="%s", outputfile.prefix="%s", is.male="%s", imputeinfofile="%s", impute.exe="%s", region.size=%s, chrom="%s", seed=%s)};
+const my $COMBINE_IMPUTE => q{ combine.impute.output(inputfile.prefix="%s", outputfile="%s", is.male="%s", imputeinfofile="%s", region.size=%s, chrom="%s" ) };
 const my $HAPLOTYPE_BAF => q{ GetChromosomeBAFs(chrom="%s", SNP_file="%s", haplotypeFile="%s", samplename="%s", outfile="%s", %s, minCounts=%s) };
-const my $PLOT_HAPLOTYPE_BAFS => q{ plot.haplotype.data(haplotyped.baf.file="%s", imageFileName="%s", samplename="%s", chrom=%s, %s) };
-const my $COMBINE_BAFS => q{ combine.baf.files(inputfile.prefix="%s_chr", inputfile.postfix="_heterozygousMutBAFs_haplotyped.txt", outputfile="%s", no.chrs=%s) };
+const my $PLOT_HAPLOTYPE_BAFS => q{ plot.haplotype.data(haplotyped.baf.file="%s", imageFileName="%s", samplename="%s", chrom="%s", %s) };
+const my $COMBINE_BAFS => q{ combine.baf.files(inputfile.prefix="%s_chr", inputfile.postfix="_heterozygousMutBAFs_haplotyped.txt", outputfile="%s", %s) };
 const my $SEGMENT_PHASED => q{ segment.baf.phased(samplename="%s", inputfile="%s", outputfile="%s", gamma=%s, phasegamma=%s, kmin=%s, phasekmin=%s, calc_seg_baf_option=%s ) };
 const my $FIT_COPY_NUMBER => q{ fit.copy.number(samplename="%s", outputfile.prefix="%s_", inputfile.baf.segmented="%s", inputfile.baf="%s", inputfile.logr="%s", dist_choice=%s, ascat_dist_choice=%s, min.ploidy=%s, max.ploidy=%s, min.rho=%s, max.rho=%s, min.goodness=%s, uninformative_BAF_threshold=%s, gamma_param=%s %s) };
 const my $CALL_SUBCLONES => q{ callSubclones(sample.name="%s", baf.segmented.file="%s", logr.file="%s", rho.psi.file="%s", output.file="%s", output.figures.prefix="%s", output.gw.figures.prefix="%s", masking_output_file="%s", sv_breakpoints_file="%s", %s, gamma=%s, segmentation.gamma=%s, siglevel=%s, maxdist=%s, noperms=%s, seed=%s, calc_seg_baf_option=%s) };
 const my $GET_CHROM_NAMES => q{ get.chrom.names("%s", "%s")};
-const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d.txt};
+const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%s.txt};
 const my $ALLELE_COUNT_PREFIX => q{%s_alleleFrequencies_chr};
-const my $ALLELE_LOCI_NAME => q{1000genomesloci2012_chr%d.txt};
+const my $ALLELE_LOCI_NAME => q{1000genomesloci2012_chr%s.txt};
 const my $ALLELE_COUNT_TAR => q{%s_allelecounts.tar.gz};
 const my $ALLELE_COUNT_DIR => q{%s_allelecounts};
 const my $ALLELE_COUNT_SCRIPT => q{alleleCounter};
@@ -94,10 +95,10 @@ const my $OTHER_PNG_DIR => q{%s_other};
 const my $RAFSEG_PNG_OUTPUT => q{%s_RAFseg_chr%s.png};
 const my $RAFSEG_PNG_TAR => q{%s_rafseg.tar.gz};
 const my $RAFSEG_PNG_DIR => q{%s_rafseg};
-const my $IMPUTE_INPUT_OUTPUT => q{%s_impute_input_chr%d.txt};
+const my $IMPUTE_INPUT_OUTPUT => q{%s_impute_input_chr%s.txt};
 const my $IMPUTE_INPUT_TAR => q{%s_impute_input.tar.gz};
 const my $IMPUTE_INPUT_DIR => q{%s_impute_input};
-const my $IMPUTE_OUTPUT_OUTPUT => q{%s_impute_output_chr%d_allHaplotypeInfo.txt};
+const my $IMPUTE_OUTPUT_OUTPUT => q{%s_impute_output_chr%s_allHaplotypeInfo.txt};
 const my $IMPUTE_OUTPUT_TAR => q{%s_impute_output.tar.gz};
 const my $IMPUTE_OUTPUT_DIR => q{%s_impute_output};
 const my $SUNRISE_PNG	=> q{%s_distance.png};
@@ -136,8 +137,8 @@ const my $ALLELECOUNTS_TAB => q{%s_alleleCounts.tab};
 const my $RSCRIPT => q{Rscript};
 const my $IMPUTE_EXE => q{impute2};
 
-const my $IMPUTE_INPUT => q{%s_impute_input_chr%d_*K.*};
-const my $IMPUTE_OUTPUT => q{%s_impute_output_chr%d.txt};
+const my $IMPUTE_INPUT => q{%s_impute_input_chr%s_*K.*};
+const my $IMPUTE_OUTPUT => q{%s_impute_output_chr%s.txt};
 
 const my $ALLELE_COUNT_PARA => ' -b %s -o %s -l %s ';
 
@@ -148,7 +149,7 @@ const my $ONEKGEN_LOCI_FILE_REGEX => q{1000genomesloci2012_chr(\w+).txt};
 const my $SPLIT_LOCI_GLOB => q{1000genomesloci2012_chr*_split%d.txt};
 const my $SPLIT_LOCI_ALL_GLOB => q{1000genomesloci2012_chr*_split*.txt};
 const my $SPLIT_LOCI_REGEX => q{1000genomesloci2012_chr(\w+)_split};
-const my $SPLIT_ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%d_split%d.txt};
+const my $SPLIT_ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%s_split%d.txt};
 const my $SPLIT_ALLELE_COUNT_OUTPUT_GLOB => q{*_alleleFrequencies_chr*_split*.txt};
 const my $SPLIT_ALLELE_COUNT_OUTPUT_REGEX => q{(.*)_alleleFrequencies_chr(\w+)_split(\d+).txt};
 
@@ -348,8 +349,8 @@ sub battenberg_allelecount {
       my $this_contig = $contigs->[$file_index-1];
       my $file_index = $options->{'loci_names_to_index'}->{$this_contig};
 
-      $loci_file = File::Spec->catfile($options->{'k_gen_loc'},sprintf($ALLELE_LOCI_NAME,$file_index));
-      $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sample_name,$file_index)));
+      $loci_file = File::Spec->catfile($options->{'k_gen_loc'},sprintf($ALLELE_LOCI_NAME,$this_contig));
+      $alleleCountOut = File::Spec->rel2abs(File::Spec->catfile($tmp,sprintf($ALLELE_COUNT_OUTPUT,$sample_name,$this_contig)));
     }
 
     PCAP::Cli::file_for_reading('1k-genome-loci-file',$loci_file);
@@ -560,10 +561,10 @@ sub battenberg_imputefromaf{
   my $tumour_name = $options->{'tumour_name'};
   my $normal_name = $options->{'normal_name'};
 
-  my $tumour_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $index));
-  my $normal_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$normal_name, $index));
+  my $tumour_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $options->{'contig_list'}->[$index-1]));
+  my $normal_allele_counts_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$normal_name, $options->{'contig_list'}->[$index-1]));
 
-  my $output_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $index;
+  my $output_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
   my $use_loci_file = 'NA';
   my $heterozygousFilter = $HETEROZYGOUS_FILTER;
 
@@ -574,7 +575,7 @@ sub battenberg_imputefromaf{
 #  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'prepare_wgs.R');
 #  my $source2 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'impute.R');
   my $function =sprintf $IMPUTE_FROM_AF,
-    $index,
+    $options->{'contig_list'}->[$index-1],
     $tumour_allele_counts_file,
     $normal_allele_counts_file,
     $output_file,
@@ -603,8 +604,8 @@ sub battenberg_runimpute{
 
   my $tumour_name = $options->{'tumour_name'};
   my $normal_name = $options->{'normal_name'};
-  my $input_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $index;
-  my $output_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $index;
+  my $input_file = sprintf $IMPUTE_INPUT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
+  my $output_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
   my $is_male = $options->{'is_male'};
   my $seed = $options->{'seed'};
   my $region_size = $IMPUTE_REGION_SIZE;
@@ -621,7 +622,7 @@ sub battenberg_runimpute{
     $impute_info,
     $impute_exe,
     $region_size,
-    $index,
+    $options->{'contig_list'}->[$index-1],
     $seed;
 
  # $command .= sprintf $RUN_FUNC, "$source1", $function;
@@ -642,8 +643,8 @@ sub battenberg_combineimpute{
 
   my $tumour_name = $options->{'tumour_name'};
   my $normal_name = $options->{'normal_name'};
-  my $input_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $index;
-  my $output_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $index;
+  my $input_file = sprintf $IMPUTE_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
+  my $output_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
 
   my $is_male = $options->{'is_male'};
   my $region_size = $IMPUTE_REGION_SIZE;
@@ -660,7 +661,7 @@ sub battenberg_combineimpute{
     $is_male,
     $impute_info,
     $region_size,
-    $index;
+    $options->{'contig_list'}->[$index-1];
 
 #  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
   $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
@@ -680,10 +681,10 @@ sub battenberg_haplotypebaf{
 
   my $tumour_name = $options->{'tumour_name'};
   my $normal_name = $options->{'normal_name'};
-  my $snp_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $index));
+  my $snp_file =  File::Spec->catfile(sprintf($ALLELE_COUNT_OUTPUT,$tumour_name, $options->{'contig_list'}->[$index-1]));
 
-  my $haplotype_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $index;
-  my $outfile = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $index;
+  my $haplotype_file = sprintf $IMPUTE_OUTPUT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
+  my $outfile = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
   my $min_counts = $MIN_NORMAL_DEPTH;
   my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
 
@@ -692,7 +693,7 @@ sub battenberg_haplotypebaf{
 
 #  my $source1 = sprintf $SOURCE, File::Spec->catfile($options->{'bat_path'}, 'haplotype.R');
   my $function =sprintf $HAPLOTYPE_BAF,
-    $index,
+    $options->{'contig_list'}->[$index-1],
     $snp_file,
     $haplotype_file,
     $tumour_name, $outfile,
@@ -714,8 +715,8 @@ sub battenberg_postbafcleanup{
 	return 1 if PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), $index);
 	my $mod_path = $options->{'mod_path'};
 
-	my $impute_in = sprintf($IMPUTE_INPUT,$options->{'tumour_name'},$index);
-	my $impute_out = sprintf($IMPUTE_OUTPUT,$options->{'tumour_name'},$index);
+	my $impute_in = sprintf($IMPUTE_INPUT,$options->{'tumour_name'},$options->{'contig_list'}->[$index-1]);
+	my $impute_out = sprintf($IMPUTE_OUTPUT,$options->{'tumour_name'},$options->{'contig_list'}->[$index-1]);
 
 	my $command = "rm -f $impute_in $impute_out";
 
@@ -733,8 +734,8 @@ sub battenberg_plothaplotypes{
 	my $impute_info = $options->{'impute_info'};
   my $tumour_name = $options->{'tumour_name'};
   my $normal_name = $options->{'normal_name'};
-  my $haplotype_file = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $index;
-  my $image_file = sprintf $HETDATA_OUTPUT, $tumour_name, $index;
+  my $haplotype_file = sprintf $HETBAFTXT_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
+  my $image_file = sprintf $HETDATA_OUTPUT, $tumour_name, $options->{'contig_list'}->[$index-1];
   my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
 
 	my $command = "cd $tmp; ";
@@ -746,7 +747,7 @@ sub battenberg_plothaplotypes{
     $haplotype_file,
     $image_file,
     $tumour_name,
-    $index,
+    $options->{'contig_list'}->[$index-1],
     "chr_names=as.vector(c($chr_names))";
 
 #  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
@@ -768,6 +769,7 @@ sub battenberg_combinebafs{
   my $normal_name = $options->{'normal_name'};
   my $output_file = sprintf $COMBINE_HETBAFTXT, $tumour_name;
   my $chroms = _get_chrom_names($impute_info, $options->{'is_male'});
+  my $chr_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
   my $num_chrs = @$chroms;
 
 	my $command = "cd $tmp; ";
@@ -778,7 +780,7 @@ sub battenberg_combinebafs{
   my $function =sprintf $COMBINE_BAFS,
     $tumour_name,
     $output_file,
-    $num_chrs;
+    "chr_names=as.vector(c($chr_names))";
 
 #  $command .= sprintf $RUN_FUNC, "$source1 $source2", $function;
   $command .= sprintf $RUN_FUNC, $LIBRARY, $function;
@@ -1299,17 +1301,22 @@ sub _bgzip_tabix_vcf{
 	my ($options,$vcf) = @_;
 	my $tmp = $options->{'tmp'};
 	my $vcf_gz = $vcf.'.gz';
-  my $bgzip = _which('bgzip');
-  $bgzip .= sprintf ' -c %s > %s', $vcf, $vcf_gz;
+    my $vcftmp = $vcf.'.tmp';
 
-  my $tabix = _which('tabix');
-  $tabix .= sprintf ' -p vcf %s', $vcf_gz;
+    my $vcfsort = _which('vcf-sort');
+    $vcfsort .= sprintf ' %s > %s', $vcf, $vcftmp;
+    
+    my $bgzip = _which('bgzip');
+    $bgzip .= sprintf ' -c %s > %s', $vcftmp, $vcf_gz;
 
-  my @commands = [$bgzip, $tabix];
+    my $tabix = _which('tabix');
+    $tabix .= sprintf ' -p vcf %s', $vcf_gz;
 
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
-  PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
-  return;
+    my @commands = [$vcfsort, $bgzip, $tabix];
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $vcfsort, 0);
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $bgzip, 0);
+    PCAP::Threaded::external_process_handler(File::Spec->catdir($tmp, 'logs'), $tabix, 0);
+    return;
 }
 
 sub _generate_segmented_vcf{
@@ -1480,6 +1487,7 @@ sub _extractRhoPsiFromFile{
 sub file_line_count_with_ignore{
 	my ($file,$ignore_contigs) = @_;
 	my $contig_count = 0;
+    my $contig_list;
   open my $FH, '<', $file or die("Error trying to open $file: $!\n");
   while(<$FH>){
     my $line = $_;
@@ -1487,9 +1495,10 @@ sub file_line_count_with_ignore{
     my ($contig,undef) = split(/\s+/,$line);
     next if(first {$_ eq $contig} @{$ignore_contigs});
     $contig_count++;
+    push(@$contig_list, $contig);
   }
   close($FH);
-  return $contig_count;
+  return ($contig_count, $contig_list);
 }
 
 sub read_contigs_from_file_with_ignore{
@@ -1502,7 +1511,7 @@ sub read_contigs_from_file_with_ignore{
     		my $line = $_;
     		chomp($line);
     		my ($con,undef) = split(/\s+/,$line);
-    		$con =~ s/chr//;  # handle hg19, removing chr prefix
+    		#$con =~ s/chr//;  # handle hg19, removing chr prefix
     		my $match=0;
     		foreach my $ign(@$ignore_contigs){
     			if("$ign" eq "$con"){
