@@ -16,8 +16,9 @@ copy number in matched NGS data.
 - [Battenberg R code](#battenberg-r-code)
 - [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
 - [Installation](#installation)
-	- [Prerequisites](#prerequisites)
+  - [Prerequisites](#prerequisites)
 - [Program Run Instructions](#program-run-instructions)
+- [LICENCE](#licence)
 
 <!-- /TOC -->
 
@@ -75,16 +76,17 @@ Some required data files are not included in the distribution but a script is in
   * Included: ``files/probloci.txt.gz``
 
 Additionally, the wgs_gc_correction_1000g files need to be downloaded. These can be obtained from the Battenberg R code site [here][bb-ref].
+  * The chr X wgs_gc_correction_1000g will require renaming. `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz` 
 
 ## Program Run Instructions
 
 For the most up to date usage instructions for the wrapper code please see the command line help:
 
-    battenberg.pl -h
+`battenberg.pl -h`
 
 Please check the [wiki][cgpbb-wiki] for common problems before raising any issues.
 
-# LICENCE
+## LICENCE
 
 ```
 Copyright (c) 2014-2018 Genome Research Ltd.

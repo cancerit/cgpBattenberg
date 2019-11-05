@@ -56,41 +56,41 @@ const my $ONEKGEN_LOCI_FILE_PATTERN => q{1000genomesloci2012_chr%s.txt};
 
 
 const my @THOUSAND_GENOMES_FILE_ORDER => qw(  1 2 3 4 5 6 7 8 9 10 11
-																				      12 13 14 15 16 17 18 19
-																				      20 21 22 23);
+                                                12 13 14 15 16 17 18 19
+                                                20 21 22 X );
 
 const my @THOUSAND_GENOMES_START => qw(  );
 
 const my @THOUSAND_GENOMES_END => qw(  );
 
 const my @THOUSAND_GENOMES_CHRS => qw( 1 2 3 4 5 6 7 8 9 10 11
-																				      12 13 14 15 16 17 18 19
-																				      20 21 22 X );
+                                        12 13 14 15 16 17 18 19
+                                        20 21 22 X );
 
 const my @IMPUTE_INFO_FILE_ORDER => qw( 1 2 3 4 5 6 7 8 9 10 11
-																				12 13 14 15 16 17 18 19
-																				20 21 22 X_PAR1 X_nonPAR X_PAR2);
+                                        12 13 14 15 16 17 18 19
+                                        20 21 22 X_PAR1 X_nonPAR X_PAR2);
 
 const my @IMPUTE_START => qw{ 0 0 0 0 0 0 0 0 0 0 0
-															0 0 0 0 0 0 0 0 20000000 0
-															0 0 2600000 154000000};
+                                0 0 0 0 0 0 0 0 20000000 0
+                                0 0 2600000 154000000};
 
 const my @IMPUTE_END => qw{ 250000000 245000000 200000000 195000000 185000000
-															175000000 160000000 150000000 145000000 140000000
-															135000000 135000000 115000000 110000000 105000000
-															90000000 80000000 80000000 65000000 65000000 50000000
-															50000000 2700000 155000000 156000000 };
+                                175000000 160000000 150000000 145000000 140000000
+                                135000000 135000000 115000000 110000000 105000000
+                                90000000 80000000 80000000 65000000 65000000 50000000
+                                50000000 2700000 155000000 156000000 };
 
 const my @IMPUTE_MALE => qw{ 1 1 1 1 1 1 1 1 1 1 1 1
-															1 1 1 1 1 1 1 1 1 1 1 0 1};
+                             1 1 1 1 1 1 1 1 1 1 1 0 1};
 
 const my @IMPUTE_CHRS => qw{ 1 2 3 4 5 6 7 8 9 10 11 12 13
-														14 15 16 17 18 19 20 21 22 X X X};
+                             14 15 16 17 18 19 20 21 22 X X X};
 
 const my %BASE_LOOKUP => ("A" => 1,
-													"C" => 2,
-													"G" => 3,
-													"T" => 4);
+                            "C" => 2,
+                            "G" => 3,
+                            "T" => 4);
 
 const my $IMPUTE_INFO_LINE => "%s\t%s\t%s\t%s\t%d\t%d\t%d\n";
 const my $ALLELE_LINE => "%d\t%d\t%d\n";
@@ -99,31 +99,31 @@ const my $LOCI_LINE => "%s\t%d\n";
 my $DOWNLOAD_VERSION = "v3";
 
 {
-	my $opts = setup();
-	#Download Both sets of files to directory and unpack.
-	print "Download and unpack files\n";
-	download_unpack_files($opts);
-	#Get the date/V3 from data download.
-	##copy hap.gz without replace
-	my $impute_unp = sprintf($IMPUTE_UNPACK_PATTERN,$DOWNLOAD_VERSION);
-	print "Move hap.gz files\n";
-	my $hap_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$IMPUTE_HAP_PATTERN,[$DOWNLOAD_VERSION]);
-	my $haps = move_files(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$hap_files);
-	##copy genetic_map_chr2_combined_b37.txt without replace
-	print "Move genetic map files\n";
-	my $gen_map_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$GENETIC_MAP_PATTERN,[]);
-	my $gens = move_files(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$gen_map_files);
-	#Replace chr in legend files as we copy.
-	print "Unpack and edit legend files\n";
-	my $leg_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$IMPUTE_LEGEND_PATTERN,[$DOWNLOAD_VERSION]);
-	my $legs = copy_files_with_convert(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$leg_files);
-	print "Create impute info file\n";
-	create_impute_info_file($opts,$legs,$gens,$haps);
-	print "Create 1000genomes files\n";
-	create_one_k_genomes_files($opts,$legs);
-	print "Cleaning up\n";
-	cleanup($opts);
-	print "Done\n";
+    my $opts = setup();
+    #Download Both sets of files to directory and unpack.
+    print "Download and unpack files\n";
+    download_unpack_files($opts);
+    #Get the date/V3 from data download.
+    ##copy hap.gz without replace
+    my $impute_unp = sprintf($IMPUTE_UNPACK_PATTERN,$DOWNLOAD_VERSION);
+    print "Move hap.gz files\n";
+    my $hap_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$IMPUTE_HAP_PATTERN,[$DOWNLOAD_VERSION]);
+    my $haps = move_files(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$hap_files);
+    ##copy genetic_map_chr2_combined_b37.txt without replace
+    print "Move genetic map files\n";
+    my $gen_map_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$GENETIC_MAP_PATTERN,[]);
+    my $gens = move_files(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$gen_map_files);
+    #Replace chr in legend files as we copy.
+    print "Unpack and edit legend files\n";
+    my $leg_files = get_filenames_for_match(File::Spec->catdir($opts->{'tmp'},$impute_unp),$IMPUTE_LEGEND_PATTERN,[$DOWNLOAD_VERSION]);
+    my $legs = copy_files_with_convert(File::Spec->catdir($opts->{'tmp'},$impute_unp),$opts->{'impdir'},$leg_files);
+    print "Create impute info file\n";
+    create_impute_info_file($opts,$legs,$gens,$haps);
+    print "Create 1000genomes files\n";
+    create_one_k_genomes_files($opts,$legs);
+    print "Cleaning up\n";
+    cleanup($opts);
+    print "Done\n";
 }
 
 sub cleanup{
@@ -133,22 +133,22 @@ sub cleanup{
 }
 
 sub create_one_k_genomes_files{
-	my ($opts,$legs) = @_;
-	#create the 1k genomes data files.
-	for(my $i=0; $i<scalar(@THOUSAND_GENOMES_FILE_ORDER); $i++){
-		my $oneKGenAllFile = File::Spec->catfile($opts->{'onekdir'},
-										sprintf($ONEKGEN_ALLELE_FILE_PATTERN,$THOUSAND_GENOMES_FILE_ORDER[$i]));
-		my $oneKGenLociFile =  File::Spec->catfile($opts->{'onekdir'},
-										sprintf($ONEKGEN_LOCI_FILE_PATTERN,$THOUSAND_GENOMES_FILE_ORDER[$i]));
+    my ($opts,$legs) = @_;
+    #create the 1k genomes data files.
+    for(my $i=0; $i<scalar(@THOUSAND_GENOMES_FILE_ORDER); $i++){
+        my $oneKGenAllFile = File::Spec->catfile($opts->{'onekdir'},
+                                        sprintf($ONEKGEN_ALLELE_FILE_PATTERN,$THOUSAND_GENOMES_FILE_ORDER[$i]));
+        my $oneKGenLociFile =  File::Spec->catfile($opts->{'onekdir'},
+                                        sprintf($ONEKGEN_LOCI_FILE_PATTERN,$THOUSAND_GENOMES_FILE_ORDER[$i]));
 
-		my ($ALLELE,$LOCI);
-		open($ALLELE,'>',$oneKGenAllFile);
-			open($LOCI,'>',$oneKGenLociFile);
-				print $ALLELE "position\ta0\ta1\n" or croak ("Error writing header to allele file '$oneKGenAllFile'\n");
-				#Open relevant legend file
-				#Account for X having multiple sections in the legend files.
-				#NB this will break if not human...
-        if($THOUSAND_GENOMES_FILE_ORDER[$i] == 23){ #If we're on chromosome X
+        my ($ALLELE,$LOCI);
+        open($ALLELE,'>',$oneKGenAllFile);
+            open($LOCI,'>',$oneKGenLociFile);
+                print $ALLELE "position\ta0\ta1\n" or croak ("Error writing header to allele file '$oneKGenAllFile'\n");
+                #Open relevant legend file
+                #Account for X having multiple sections in the legend files.
+                #NB this will break if not human...
+        if($THOUSAND_GENOMES_FILE_ORDER[$i] == "X"){ #If we're on chromosome X
           my $j=$i;
           #use $j to iterate to the end of the list so we include all par and non par chr x positions
           for(my $j=$i; $j<scalar(@$legs); $j++){
@@ -197,103 +197,103 @@ sub create_one_k_genomes_files{
           close($READ);
         }
 
-			close($LOCI);
-		close($ALLELE);
-	}
-	return;
+            close($LOCI);
+        close($ALLELE);
+    }
+    return;
 }
 
 sub create_impute_info_file{
-	my ($opts,$legs,$gens,$haps) = @_;
-	#Make impute info file
-	my $impute_info_file = File::Spec->catfile($opts->{'impdir'},$IMPUTE_INFO_FILENAME);
-	my $INFOUT;
-	open ($INFOUT,'>',$impute_info_file);
-		for(my $i=0;$i<scalar(@IMPUTE_END);$i++){
-			print $INFOUT sprintf($IMPUTE_INFO_LINE,$IMPUTE_CHRS[$i],$legs->[$i],$gens->[$i],$haps->[$i],
-														$IMPUTE_START[$i],$IMPUTE_END[$i],$IMPUTE_MALE[$i])
-														or croak("Error trying to write line to impute info file '$impute_info_file'\n");
-		}
-	close($INFOUT);
-	return;
+    my ($opts,$legs,$gens,$haps) = @_;
+    #Make impute info file
+    my $impute_info_file = File::Spec->catfile($opts->{'impdir'},$IMPUTE_INFO_FILENAME);
+    my $INFOUT;
+    open ($INFOUT,'>',$impute_info_file);
+        for(my $i=0;$i<scalar(@IMPUTE_END);$i++){
+            print $INFOUT sprintf($IMPUTE_INFO_LINE,$IMPUTE_CHRS[$i],$legs->[$i],$gens->[$i],$haps->[$i],
+                                                        $IMPUTE_START[$i],$IMPUTE_END[$i],$IMPUTE_MALE[$i])
+                                                        or croak("Error trying to write line to impute info file '$impute_info_file'\n");
+        }
+    close($INFOUT);
+    return;
 }
 
 sub copy_files_with_convert{
-	my ($from,$to,$filenames) = @_;
-	my $outfiles;
-	foreach my $file(@$filenames){
-		#Unpack files into the same tmp directory
-		unpack_file(File::Spec->catfile($from,$file),$from,'gz');
-		my $unpack_name = $file;
-		$unpack_name =~ s/\.gz$//;
-		my $unpack_from = File::Spec->catfile($from,$unpack_name);
-		my $unpack_to = File::Spec->catfile($to,$unpack_name);
-		#Open file to read
-		my ($IN,$OUT);
-		open($IN, '<', $unpack_from);
-		#open file to write
-		open($OUT, '>', $unpack_to);
-			#Read each line
-			while(<$IN>){
-				my $line = $_;
-				$line =~ s/^chr//;
-				print $OUT $line or croak("Error writing chr converted legend line to $unpack_to: $!.");
-			}
-			#Find replace all chr with non chr
-		#close read
-		close($IN);
-		#close write
-		close($OUT);
-		push(@$outfiles,$unpack_to);
-	}
-	return $outfiles;
+    my ($from,$to,$filenames) = @_;
+    my $outfiles;
+    foreach my $file(@$filenames){
+        #Unpack files into the same tmp directory
+        unpack_file(File::Spec->catfile($from,$file),$from,'gz');
+        my $unpack_name = $file;
+        $unpack_name =~ s/\.gz$//;
+        my $unpack_from = File::Spec->catfile($from,$unpack_name);
+        my $unpack_to = File::Spec->catfile($to,$unpack_name);
+        #Open file to read
+        my ($IN,$OUT);
+        open($IN, '<', $unpack_from);
+        #open file to write
+        open($OUT, '>', $unpack_to);
+            #Read each line
+            while(<$IN>){
+                my $line = $_;
+                $line =~ s/^chr//;
+                print $OUT $line or croak("Error writing chr converted legend line to $unpack_to: $!.");
+            }
+            #Find replace all chr with non chr
+        #close read
+        close($IN);
+        #close write
+        close($OUT);
+        push(@$outfiles,$unpack_to);
+    }
+    return $outfiles;
 }
 
 sub move_files{
-	my ($from,$to,$filenames) = @_;
-	my $outfiles;
-	foreach my $file(@$filenames){
-		my $fromfile = File::Spec->catfile($from,$file);
-		my $tofile = File::Spec->catfile($to,$file);
-		croak("Error: Failed to move file $fromfile to $tofile :$!.") if(!move($fromfile,$tofile));
-		push(@$outfiles,$tofile);
-	}
-	return $outfiles;
+    my ($from,$to,$filenames) = @_;
+    my $outfiles;
+    foreach my $file(@$filenames){
+        my $fromfile = File::Spec->catfile($from,$file);
+        my $tofile = File::Spec->catfile($to,$file);
+        croak("Error: Failed to move file $fromfile to $tofile :$!.") if(!move($fromfile,$tofile));
+        push(@$outfiles,$tofile);
+    }
+    return $outfiles;
 }
 
 sub get_filenames_for_match{
-	my ($dir,$pattern,$matchers) = @_;
-	my @list = ();
-	my $file_name;
-	foreach my $sect(@IMPUTE_INFO_FILE_ORDER){
-		push(@$matchers,$sect);
-		my $file_name = sprintf($pattern,@$matchers);
-		my $file = File::Spec->catfile($dir,$file_name);
-		croak("Expected to find file '$file'.") if(! -e $file);
-		push(@list,$file_name);
-		pop(@$matchers);
-	}
-	return \@list;
+    my ($dir,$pattern,$matchers) = @_;
+    my @list = ();
+    my $file_name;
+    foreach my $sect(@IMPUTE_INFO_FILE_ORDER){
+        push(@$matchers,$sect);
+        my $file_name = sprintf($pattern,@$matchers);
+        my $file = File::Spec->catfile($dir,$file_name);
+        croak("Expected to find file '$file'.") if(! -e $file);
+        push(@list,$file_name);
+        pop(@$matchers);
+    }
+    return \@list;
 }
 
 sub download_unpack_files{
-	my ($opts) = @_;
-	my $impute_download = $opts->{'u'}.sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION);
-	my $imputetgz = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION));
-	download_file($impute_download,$imputetgz,$opts->{'c'}) unless(-e $imputetgz.'.dl_success');
-	unpack_file($imputetgz,$opts->{'tmp'},'tgz');
-	return;
+    my ($opts) = @_;
+    my $impute_download = $opts->{'u'}.sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION);
+    my $imputetgz = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION));
+    download_file($impute_download,$imputetgz,$opts->{'c'}) unless(-e $imputetgz.'.dl_success');
+    unpack_file($imputetgz,$opts->{'tmp'},'tgz');
+    return;
 }
 
 sub unpack_file{
-	my ($tgz,$output_dir,$type) = @_;
-	my $ae = Archive::Extract->new( archive => $tgz, type => $type );
-	$ae->extract( to => $output_dir ) or croak("Error unpacking $tgz to $output_dir: ".$ae->error."\n");
-	return;
+    my ($tgz,$output_dir,$type) = @_;
+    my $ae = Archive::Extract->new( archive => $tgz, type => $type );
+    $ae->extract( to => $output_dir ) or croak("Error unpacking $tgz to $output_dir: ".$ae->error."\n");
+    return;
 }
 
 sub download_file{
-	my ($url,$file,$use_curl) = @_;
+    my ($url,$file,$use_curl) = @_;
         if ($use_curl) {
           my $output = `curl --location $url > $file`;
         } else {
@@ -307,12 +307,12 @@ sub download_file{
             move($local, $file) or croak $!;
           }
         }
-	# touch a file to show the archive is complete and not partial to prevent re-dl (3.7GB) if this bit is successful
-	# likely use case would be running out of disk space during unpacking intermediate space required is ~16GB
-	my $success_file = $file.'.dl_success';
-	open my $x, '>', $success_file;
-	close $x;
-	return;
+    # touch a file to show the archive is complete and not partial to prevent re-dl (3.7GB) if this bit is successful
+    # likely use case would be running out of disk space during unpacking intermediate space required is ~16GB
+    my $success_file = $file.'.dl_success';
+    open my $x, '>', $success_file;
+    close $x;
+    return;
 }
 
 sub setup{
@@ -321,12 +321,12 @@ sub setup{
   $opts{'cmd'} = join " ", $0, @ARGV;
   my @random_args;
   GetOptions(
-  				'h|help' => \$opts{'h'},
-					'm|man' => \$opts{'m'},
-					'v|version' => \$opts{'v'},
-					'c|use-curl' => \$opts{'c'},
-					'o|out-dir=s' => \$opts{'o'},
-					'd|download-version=s' => \$opts{'d'},
+                  'h|help' => \$opts{'h'},
+                    'm|man' => \$opts{'m'},
+                    'v|version' => \$opts{'v'},
+                    'c|use-curl' => \$opts{'c'},
+                    'o|out-dir=s' => \$opts{'o'},
+                    'd|download-version=s' => \$opts{'d'},
           'u|url=s' => \$opts{'u'},
           '<>' => sub{push(@random_args,shift(@_));},
   ) or pod2usage(2);
@@ -338,28 +338,28 @@ sub setup{
 
   pod2usage(-verbose => 1) if(defined $opts{'h'});
   pod2usage(-verbose => 2) if(defined $opts{'m'});
-	pod2usage(-msg  => "\nERROR: Invalid inputs. Must provide o|out-dir.\n", -verbose => 1,  -output => \*STDERR) if(!exists $opts{'o'} || !defined $opts{'o'});
+    pod2usage(-msg  => "\nERROR: Invalid inputs. Must provide o|out-dir.\n", -verbose => 1,  -output => \*STDERR) if(!exists $opts{'o'} || !defined $opts{'o'});
 
   # make outdir absolute
   $opts{'o'} = File::Spec->rel2abs( $opts{'o'} );
 
-	#Ensure download and other directories exist, if not create it.
-	my $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
-	make_path($tmpdir) unless(-d $tmpdir);
+    #Ensure download and other directories exist, if not create it.
+    my $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
+    make_path($tmpdir) unless(-d $tmpdir);
 
-	my $imputedir = File::Spec->catdir($opts{'o'}, 'impute');
-	make_path($imputedir) unless(-d $imputedir);
+    my $imputedir = File::Spec->catdir($opts{'o'}, 'impute');
+    make_path($imputedir) unless(-d $imputedir);
 
-	my $onekdir = File::Spec->catdir($opts{'o'}, '1000genomesloci');
-	make_path($onekdir) unless(-d $onekdir);
+    my $onekdir = File::Spec->catdir($opts{'o'}, '1000genomesloci');
+    make_path($onekdir) unless(-d $onekdir);
 
-	$opts{'tmp'} = $tmpdir;
-	$opts{'impdir'} = $imputedir;
-	$opts{'onekdir'} = $onekdir;
+    $opts{'tmp'} = $tmpdir;
+    $opts{'impdir'} = $imputedir;
+    $opts{'onekdir'} = $onekdir;
 
-	$DOWNLOAD_VERSION = $opts{'d'} if(exists($opts{'d'}) && defined($opts{'d'}));
+    $DOWNLOAD_VERSION = $opts{'d'} if(exists($opts{'d'}) && defined($opts{'d'}));
 
-	$opts{'u'} = $DEFAULT_URL if(!exists($opts{'u'}) || !defined($opts{'u'}));
+    $opts{'u'} = $DEFAULT_URL if(!exists($opts{'u'}) || !defined($opts{'u'}));
 
   return \%opts;
 }
