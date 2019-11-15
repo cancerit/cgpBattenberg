@@ -1025,22 +1025,22 @@ sub battenberg_finalise{
 	#Tarball allelcounts and copy to results folder
 	if (PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$ALLELE_COUNT_OUTPUT,
-														sprintf($ALLELE_COUNT_TAR,$options->{'normal_name'}),
-														sprintf($ALLELE_COUNT_DIR,$options->{'normal_name'}),
-														$tmp,
-														$outdir,
-														undef,
-														$options->{'normal_name'});
+                                $ALLELE_COUNT_OUTPUT,
+                                sprintf($ALLELE_COUNT_TAR,$options->{'normal_name'}),
+                                sprintf($ALLELE_COUNT_DIR,$options->{'normal_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'normal_name'});
 
 		_zip_and_tar_fileset($options,
-														$ALLELE_COUNT_OUTPUT,
-														sprintf($ALLELE_COUNT_TAR,$options->{'tumour_name'}),
-														sprintf($ALLELE_COUNT_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														undef,
-														$options->{'tumour_name'});
+                                $ALLELE_COUNT_OUTPUT,
+                                sprintf($ALLELE_COUNT_TAR,$options->{'tumour_name'}),
+                                sprintf($ALLELE_COUNT_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]});
 	}
@@ -1049,91 +1049,91 @@ sub battenberg_finalise{
 	#Tarball subclones pngs and move to the results folder
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['subclone.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$SUBCLONE_PNG_OUTPUT,
-														sprintf($SUBCLONE_TAR,$options->{'tumour_name'}),
-														sprintf($SUBCLONE_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														$contigs,
-														$options->{'tumour_name'});
+                                $SUBCLONE_PNG_OUTPUT,
+                                sprintf($SUBCLONE_TAR,$options->{'tumour_name'}),
+                                sprintf($SUBCLONE_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['subclone.tar.gz',0]});
 	}
 
 	#Tarball of by chromosome heterozygousData.png images
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['hetDataPngs.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$HETDATA_OUTPUT,
-														sprintf($HETDATA_TAR,$options->{'tumour_name'}),
-														sprintf($HETDATA_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														$contigs,
-														$options->{'tumour_name'});
+                                $HETDATA_OUTPUT,
+                                sprintf($HETDATA_TAR,$options->{'tumour_name'}),
+                                sprintf($HETDATA_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['hetDataPngs.tar.gz',0]});
 	}
 
 	#het_mut_baf_txt tar.gz
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['hetBAFTxt.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$HETBAFTXT_OUTPUT,
-														sprintf($HETBAFTXT_TAR,$options->{'tumour_name'}),
-														sprintf($HETBAFTXT_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														undef,
-														$options->{'tumour_name'});
+                                $HETBAFTXT_OUTPUT,
+                                sprintf($HETBAFTXT_TAR,$options->{'tumour_name'}),
+                                sprintf($HETBAFTXT_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['hetBAFTxt.tar.gz',0]});
 	}
 
 	#Other pngs
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['other.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$OTHER_PNG_OUTPUT,
-														sprintf($OTHER_PNG_TAR,$options->{'tumour_name'}),
-														sprintf($OTHER_PNG_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														$contigs,
-														$options->{'tumour_name'});
+                                $OTHER_PNG_OUTPUT,
+                                sprintf($OTHER_PNG_TAR,$options->{'tumour_name'}),
+                                sprintf($OTHER_PNG_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['other.tar.gz',0]});
 	}
 
 	#RAFSeg_chrX
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['rafseg.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$RAFSEG_PNG_OUTPUT,
-														sprintf($RAFSEG_PNG_TAR,$options->{'tumour_name'}),
-														sprintf($RAFSEG_PNG_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														$contigs,
-														$options->{'tumour_name'});
+                                $RAFSEG_PNG_OUTPUT,
+                                sprintf($RAFSEG_PNG_TAR,$options->{'tumour_name'}),
+                                sprintf($RAFSEG_PNG_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['rafseg.tar.gz',0]});
 	}
 
 	#impute input
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['impute_input.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$IMPUTE_INPUT_OUTPUT,
-														sprintf($IMPUTE_INPUT_TAR,$options->{'tumour_name'}),
-														sprintf($IMPUTE_INPUT_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														undef,
-														$options->{'tumour_name'});
+                                $IMPUTE_INPUT_OUTPUT,
+                                sprintf($IMPUTE_INPUT_TAR,$options->{'tumour_name'}),
+                                sprintf($IMPUTE_INPUT_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['impute_input.tar.gz',0]});
 	}
 
 	#impute output
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['impute_output.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
-														$IMPUTE_OUTPUT_OUTPUT,
-														sprintf($IMPUTE_OUTPUT_TAR,$options->{'tumour_name'}),
-														sprintf($IMPUTE_OUTPUT_DIR,$options->{'tumour_name'}),
-														$tmp,
-														$outdir,
-														undef,
-														$options->{'tumour_name'});
+                                $IMPUTE_OUTPUT_OUTPUT,
+                                sprintf($IMPUTE_OUTPUT_TAR,$options->{'tumour_name'}),
+                                sprintf($IMPUTE_OUTPUT_DIR,$options->{'tumour_name'}),
+                                $tmp,
+                                $outdir,
+                                $contigs,
+                                $options->{'tumour_name'});
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['impute_output.tar.gz',0]});
 	}
 
