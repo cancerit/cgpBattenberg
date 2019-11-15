@@ -26,7 +26,6 @@ use strict;
 
 use warnings FATAL => 'all';
 use autodie qw(:all);
-use Data::Dumper;
 use Const::Fast qw(const);
 use Cwd qw(abs_path getcwd);
 use File::Basename;
