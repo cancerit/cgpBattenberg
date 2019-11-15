@@ -1021,6 +1021,8 @@ sub battenberg_finalise{
   #Write seed to file
   _writeSeedToFile($options);
 
+  my $contigs = read_contigs_from_file_with_ignore($options->{'reference'},$options->{'ignored_contigs'});
+
 	#Tarball allelcounts and copy to results folder
 	if (PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
@@ -1044,7 +1046,6 @@ sub battenberg_finalise{
 		PCAP::Threaded::touch_success(File::Spec->catdir($tmp, 'progress'), @{['allele_tar_gz',0]});
 	}
 
-	my $contigs = read_contigs_from_file_with_ignore($options->{'reference'},$options->{'ignored_contigs'});
 	#Tarball subclones pngs and move to the results folder
 	if(PCAP::Threaded::success_exists(File::Spec->catdir($tmp, 'progress'), @{['subclone.tar.gz',0]}) == 0){
 		_zip_and_tar_fileset($options,
