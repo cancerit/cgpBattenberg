@@ -13,12 +13,13 @@ copy number in matched NGS data.
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Battenberg R code](#battenberg-r-code)
-- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-- [Program Run Instructions](#program-run-instructions)
-- [LICENCE](#licence)
+* [Battenberg R code](#battenberg-r-code)
+  * [Scientific notation in R](#scientific-notation-in-r)
+* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+* [Installation](#installation)
+  * [Prerequisites](#prerequisites)
+* [Program Run Instructions](#program-run-instructions)
+* [LICENCE](#licence)
 
 <!-- /TOC -->
 
@@ -26,6 +27,14 @@ copy number in matched NGS data.
 
 The Battenberg R code is maintained in a separate repository [Wedge-Oxford/battenberg][bb-repo]
 and this is where any questions or issues specific to the R code should be directed.
+
+### Scientific notation in R
+
+To prevent scientifi notation being used for genome coordinates, rlease ensure that your `~/.Rprofile` contains the following line:
+
+```R
+options(scipen = 999)
+```
 
 ## Docker, Singularity and Dockstore
 
@@ -76,7 +85,7 @@ Some required data files are not included in the distribution but a script is in
   * Included: ``files/probloci.txt.gz``
 
 Additionally, the wgs_gc_correction_1000g files need to be downloaded. These can be obtained from the Battenberg R code site [here][bb-ref].
-  * The chr X wgs_gc_correction_1000g will require renaming. `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz` 
+  * The chr X wgs_gc_correction_1000g will require renaming. `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz`
 
 ## Program Run Instructions
 
