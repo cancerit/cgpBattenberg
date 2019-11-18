@@ -49,7 +49,7 @@ FROM ubuntu:16.04
 
 LABEL maintainer="cgphelp@sanger.ac.uk" \
       uk.ac.sanger.cgp="Cancer, Ageing and Somatic Mutation, Wellcome Trust Sanger Institute" \
-      version="v1.0.0" \
+      version="3.4.1" \
       description="cgpCaVEManWrapper docker"
 
 RUN apt-get -yq update
@@ -92,5 +92,7 @@ RUN adduser --disabled-password --gecos '' ubuntu && chsh -s /bin/bash && mkdir 
 
 USER    ubuntu
 WORKDIR /home/ubuntu
+
+COPY build/.Rprofile .Rprofile
 
 CMD ["/bin/bash"]
