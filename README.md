@@ -13,11 +13,12 @@ copy number in matched NGS data.
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Battenberg R code](#battenberg-r-code)
-- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-- [Installation](#installation)
-	- [Prerequisites](#prerequisites)
-- [Program Run Instructions](#program-run-instructions)
+* [Battenberg R code](#battenberg-r-code)
+  * [Scientific notation in R](#scientific-notation-in-r)
+* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+* [Installation](#installation)
+  * [Prerequisites](#prerequisites)
+* [Program Run Instructions](#program-run-instructions)
 
 <!-- /TOC -->
 
@@ -25,6 +26,14 @@ copy number in matched NGS data.
 
 The Battenberg R code is maintained in a separate repository [Wedge-Oxford/battenberg][bb-repo]
 and this is where any questions or issues specific to the R code should be directed.
+
+### Scientific notation in R
+
+To prevent scientifi notation being used for genome coordinates, rlease ensure that your `~/.Rprofile` contains the following line:
+
+```R
+options(scipen = 999)
+```
 
 ## Docker, Singularity and Dockstore
 
