@@ -13,13 +13,14 @@ copy number in matched NGS data.
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-* [Battenberg R code](#battenberg-r-code)
-  * [Scientific notation in R](#scientific-notation-in-r)
-* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-* [Installation](#installation)
-  * [Prerequisites](#prerequisites)
-* [Program Run Instructions](#program-run-instructions)
-* [LICENCE](#licence)
+- [Battenberg R code](#battenberg-r-code)
+  - [Scientific notation in R](#scientific-notation-in-r)
+- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+- [Program Run Instructions](#program-run-instructions)
+- [LICENCE](#licence)
+
 
 <!-- /TOC -->
 
@@ -54,8 +55,8 @@ The battenberg R files are installed automatically from the Battenberg GitHub re
 Please install the following first:
 
 1. [PCAP-core v2.1.3+][pcap-core-rel]
-1. [alleleCount v3.3.1+][allele-count-rel]
-1. [cgpVcf v2.0.1+][cgpvcf-rel]
+2. [alleleCount v3.3.1+][allele-count-rel]
+3. [cgpVcf v2.0.1+][cgpvcf-rel]
 
 Then execute:
 
