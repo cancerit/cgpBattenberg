@@ -1,5 +1,5 @@
 ##########LICENCE##########
-# Copyright (c) 2014-2018 Genome Research Ltd.
+# Copyright (c) 2014-2019 Genome Research Ltd.
 #
 # Author: Cancer Genome Project <cgphelp@sanger.ac.uk>
 #
@@ -25,7 +25,8 @@ use strict;
 
 use Const::Fast qw(const);
 use base 'Exporter';
-our $VERSION = '3.4.1';
+
+our $VERSION = '3.5.0';
 our @EXPORT = qw($VERSION);
 
 1;

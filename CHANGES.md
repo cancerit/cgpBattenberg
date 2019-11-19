@@ -1,15 +1,22 @@
 # Changes
 
+## 3.5.0
+
+* Changes required for use with GRCh38 compatible Battenberg R
+* **some reference files for for chromosome X will require renaming in GRCh37**
+* `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz`
+* `mv 1000genomesAlleles2012_chr23.txt 1000genomesAlleles2012_chrX.txt`
+* `mv 1000genomesloci2012_chr23.txt 1000genomesloci2012_chrX.txt`
+* This release points to cancerit fork of core battenberg algorithm [here](https://github.com/cancerit/battenberg/feature/grch38)
+
 ## 3.4.0
 
 * Placed into a container.
-
 
 ## 3.3.1
 
 * Fixed bug when creating split loci files which would occasionally count wrongly due to rounding errors. Fixed the cause of the rounding error and added a sort to the hash.
 * Added check that the number of split loci files is at least the number of required contigs
-
 
 ## 3.3.0
 
