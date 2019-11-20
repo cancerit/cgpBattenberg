@@ -36,6 +36,9 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV R_LIBS $OPT/R-lib
 ENV R_LIBS_USER $R_LIBS
+ENV R_PROFILE_USER $OPT/config/Rprofile
+
+COPY build/Rprofile $OPT/config/Rprofile
 
 # build tools from other repos
 ADD build/opt-build.sh build/
@@ -83,6 +86,7 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV R_LIBS $OPT/R-lib
 ENV R_LIBS_USER $R_LIBS
+ENV R_PROFILE_USER $OPT/config/Rprofile
 
 RUN mkdir -p $OPT
 COPY --from=builder $OPT $OPT
@@ -92,7 +96,5 @@ RUN adduser --disabled-password --gecos '' ubuntu && chsh -s /bin/bash && mkdir 
 
 USER    ubuntu
 WORKDIR /home/ubuntu
-
-COPY build/.Rprofile .Rprofile
 
 CMD ["/bin/bash"]
