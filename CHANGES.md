@@ -1,5 +1,9 @@
 # Changes
 
+## 3.5.1
+
+* Fix #107, again... solves the problem of Rprofile not being found when container invoked by tools that mess with $HOME
+
 ## 3.5.0
 
 * Changes required for use with GRCh38 compatible Battenberg R
