@@ -908,7 +908,7 @@ sub _calc_rho_psi_from_subclones_file {
 
   while(<$FH>){
     my $line = $_;
-    next if($line =~ m/\s*chr/);
+    next if($line =~ m/\s*chr\tstartpos/);
     chomp($line);
     my ($chr,$start,$stop,$BAF,$unused,$LogR,undef) = split(/\t/,$line);
     if($chr eq $new_chr && $new_pos >= $start && $new_pos <= $stop) {
@@ -1305,7 +1305,7 @@ sub _bgzip_tabix_vcf{
 
     my $vcfsort = _which('vcf-sort');
     $vcfsort .= sprintf ' %s > %s', $vcf, $vcftmp;
-    
+
     my $bgzip = _which('bgzip');
     $bgzip .= sprintf ' -c %s > %s', $vcftmp, $vcf_gz;
 
