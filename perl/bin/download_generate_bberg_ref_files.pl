@@ -72,7 +72,7 @@ const my @IMPUTE_INFO_FILE_ORDER => qw( 1 2 3 4 5 6 7 8 9 10 11
                                         20 21 22 X_PAR1 X_nonPAR X_PAR2);
 
 const my @IMPUTE_START => qw{ 0 0 0 0 0 0 0 0 0 0 0
-                                0 0 0 0 0 0 0 0 20000000 0
+                                0 0 0 0 0 0 0 0 0 0
                                 0 0 2600000 154000000};
 
 const my @IMPUTE_END => qw{ 250000000 245000000 200000000 195000000 185000000
