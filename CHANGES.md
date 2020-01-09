@@ -3,6 +3,8 @@
 ## 3.5.3
 
 * Fix parsing of subclones file when generating final outputs
+* This release points to cancerit fork of core battenberg algorithm [here](https://github.com/cancerit/battenberg/feature/grch38)
+  * v2.3.1 - faster PCF function
 
 ## 3.5.2
 
