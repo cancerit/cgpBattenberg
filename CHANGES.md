@@ -1,5 +1,13 @@
 # Changes
 
+## 3.5.3
+
+* Fix parsing of subclones file when generating final outputs
+
+## 3.5.2
+
+* Fix parsing of subclones file during refit
+
 ## 3.5.1
 
 * Fix #107, again... solves the problem of Rprofile not being found when container invoked by tools that mess with $HOME

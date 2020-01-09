@@ -110,7 +110,7 @@ use Sanger::CGP::Vcf::VcfProcessLog;
     while(<$IN_FH>){
       my $line = $_;
       chomp($line);
-      next if($line =~ m/^\s*chr/);
+      next if $line =~ /^\s*chr\tstartpos/;
       my ($chr, $start, $end, $mt_cn_maj, $mt_cn_min, $mt_frac, $mt_cn_maj_sec, $mt_cn_min_sec, $mt_frac_sec) = (split('\s+',$line))[0,1,2,7,8,9,10,11,12];
 
       #Fix to work round instances where the major and minor cn
