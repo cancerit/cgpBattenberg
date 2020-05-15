@@ -148,7 +148,7 @@ sub create_one_k_genomes_files{
                 #Open relevant legend file
                 #Account for X having multiple sections in the legend files.
                 #NB this will break if not human...
-        if($THOUSAND_GENOMES_FILE_ORDER[$i] eq "X"){ #If we're on chromosome X
+        if($THOUSAND_GENOMES_FILE_ORDER[$i] == "X"){ #If we're on chromosome X
           my $j=$i;
           #use $j to iterate to the end of the list so we include all par and non par chr x positions
           for(my $j=$i; $j<scalar(@$legs); $j++){
@@ -280,11 +280,7 @@ sub download_unpack_files{
     my ($opts) = @_;
     my $impute_download = $opts->{'u'}.sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION);
     my $imputetgz = File::Spec->catfile($opts->{'tmp'}, sprintf($IMPUTE_TGZ_PATTERN,$DOWNLOAD_VERSION));
-    if ( defined $opts->{'w'} ) {
-      die "\nIMPUTE archive $imputetgz not found\n" unless ( -e $imputetgz  );
-    } else {
-      download_file($impute_download,$imputetgz,$opts->{'c'}) unless(-e $imputetgz.'.dl_success');
-    }
+    download_file($impute_download,$imputetgz,$opts->{'c'}) unless(-e $imputetgz.'.dl_success');
     unpack_file($imputetgz,$opts->{'tmp'},'tgz');
     return;
 }
@@ -297,8 +293,7 @@ sub unpack_file{
 }
 
 sub download_file{
-    my ($url,$file,$use_curl,$pre_down) = @_;
-    print "downloading\n";
+    my ($url,$file,$use_curl) = @_;
         if ($use_curl) {
           my $output = `curl --location $url > $file`;
         } else {
@@ -331,7 +326,6 @@ sub setup{
                     'v|version' => \$opts{'v'},
                     'c|use-curl' => \$opts{'c'},
                     'o|out-dir=s' => \$opts{'o'},
-                    'w|down-dir=s' => \$opts{'w'},
                     'd|download-version=s' => \$opts{'d'},
           'u|url=s' => \$opts{'u'},
           '<>' => sub{push(@random_args,shift(@_));},
@@ -348,17 +342,10 @@ sub setup{
 
   # make outdir absolute
   $opts{'o'} = File::Spec->rel2abs( $opts{'o'} );
-  #Ensure download and other directories exist, if not create it.
-    my $tmpdir;
-    die "\nSpecified download directory doesn't exist\n" if ( defined $opts{'w'} &&  (not -d $opts{'w'}) );
-    if ( defined $opts{'w'} ) {
-      $tmpdir = $opts{'w'};
-    }
-    else {
-   #Ensure download and other directories exist, if not create it.
-      $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
-      make_path($tmpdir) unless(-d $tmpdir);
-    }
+
+    #Ensure download and other directories exist, if not create it.
+    my $tmpdir = File::Spec->catdir($opts{'o'}, 'tmp');
+    make_path($tmpdir) unless(-d $tmpdir);
 
     my $imputedir = File::Spec->catdir($opts{'o'}, 'impute');
     make_path($imputedir) unless(-d $imputedir);
@@ -394,7 +381,6 @@ download_generate_bberg_ref_files.pl [options]
     Optional parameters:
       -url                      -u  URL to download battenberg impute reference data from [see docs for default url]
       -use-curl                 -c  Use curl for the download
-      -down-dir                 -w  Use pre-downloaded IMPUTE archive from this directory
       -download-version         -d  Download version (part of download name) default: [v3]
 
     Other:
@@ -420,11 +406,6 @@ URL to download impute files from. Default is [https://mathgen.stats.ox.ac.uk/im
 Files downloaded are:
 ALL_1000G_phase1integrated_v3_annotated_legends.tgz
 ALL_1000G_phase1integrated_v3_impute.tgz
-
-=item B<-down-dir>
-
-Directory with a pre-downloaded IMPUTE archive
-
 
 =item B<-download-version>
 
