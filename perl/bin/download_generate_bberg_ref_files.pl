@@ -297,7 +297,7 @@ sub unpack_file{
 }
 
 sub download_file{
-    my ($url,$file,$use_curl,$pre_down) = @_;
+    my ($url,$file,$use_curl) = @_;
     print "downloading\n";
         if ($use_curl) {
           my $output = `curl --location $url > $file`;
