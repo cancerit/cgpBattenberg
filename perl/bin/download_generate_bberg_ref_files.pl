@@ -148,7 +148,7 @@ sub create_one_k_genomes_files{
                 #Open relevant legend file
                 #Account for X having multiple sections in the legend files.
                 #NB this will break if not human...
-        if($THOUSAND_GENOMES_FILE_ORDER[$i] == "X"){ #If we're on chromosome X
+        if($THOUSAND_GENOMES_FILE_ORDER[$i] eq "X"){ #If we're on chromosome X
           my $j=$i;
           #use $j to iterate to the end of the list so we include all par and non par chr x positions
           for(my $j=$i; $j<scalar(@$legs); $j++){
