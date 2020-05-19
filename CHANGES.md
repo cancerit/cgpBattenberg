@@ -1,5 +1,8 @@
 # Changes
 
+## Next Release
+ * Added option the reference download script to use a pre-downloaded archive
+
 ## 3.5.3
 
 * Fix parsing of subclones file when generating final outputs
