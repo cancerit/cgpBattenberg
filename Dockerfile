@@ -1,4 +1,4 @@
-FROM  quay.io/wtsicgp/dockstore-cgpmap:3.1.4 as builder
+FROM  quay.io/wtsicgp/pcap-core:5.2.2 as builder
 
 USER  root
 
@@ -9,21 +9,22 @@ ENV VER_IMPUTE2="v2.3.0"
 ENV VER_VCFTOOLS="0.1.16"
 
 RUN apt-get -yq update
-RUN apt-get install -yq --no-install-recommends \
-locales \
-g++ \
-make \
-gcc \
-pkg-config \
-python \
-zlib1g-dev \
-r-base \
-libbz2-dev \
-liblzma-dev \
-libcurl4-openssl-dev \
-libssl-dev \
-libxml2-dev \
-libssh2-1-dev
+
+ENV DEBIAN_FRONTEND "noninteractive" 
+RUN apt-get install -yq --no-install-recommends locales
+RUN apt-get install -yq --no-install-recommends locales g++
+RUN apt-get install -yq --no-install-recommends locales make
+RUN apt-get install -yq --no-install-recommends locales gcc
+RUN apt-get install -yq --no-install-recommends locales pkg-config
+RUN apt-get install -yq --no-install-recommends locales python
+RUN apt-get install -yq --no-install-recommends locales zlib1g-dev
+RUN apt-get install -yq --no-install-recommends locales r-base
+RUN apt-get install -yq --no-install-recommends locales libbz2-dev
+RUN apt-get install -yq --no-install-recommends locales liblzma-dev
+RUN apt-get install -yq --no-install-recommends locales libcurl4-openssl-dev
+RUN apt-get install -yq --no-install-recommends locales libssl-dev
+RUN apt-get install -yq --no-install-recommends locales libxml2-dev
+RUN apt-get install -yq --no-install-recommends locales libssh2-1-dev
 
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
@@ -48,14 +49,16 @@ RUN bash build/opt-build.sh $OPT
 COPY . .
 RUN bash build/opt-build-local.sh $OPT
 
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 LABEL maintainer="cgphelp@sanger.ac.uk" \
       uk.ac.sanger.cgp="Cancer, Ageing and Somatic Mutation, Wellcome Trust Sanger Institute" \
-      version="3.5.2" \
+      version="3.6.0" \
       description="cgpCaVEManWrapper docker"
 
 RUN apt-get -yq update
+
+ENV DEBIAN_FRONTEND "noninteractive" 
 RUN apt-get install -yq --no-install-recommends \
 apt-transport-https \
 locales \
