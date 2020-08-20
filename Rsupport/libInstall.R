@@ -1,5 +1,8 @@
-instLib = commandArgs(T)[1]
-
+args = commandArgs(T)
+instLib = args[1]
+ascatPackage = args[2]
+battenbergPackage = args[3]
+ 
 r = getOption("repos") # hard code the UK repo for CRAN
 r["CRAN"] = "http://cran.uk.r-project.org"
 options(repos = r)
@@ -29,6 +32,7 @@ if( (version$major == 3 && version$minor >=5) || version$major > 3) {
   ipak_bioc(c("gridExtra"))
   ipak_bioc(c("gtools"))
   ipak_bioc(c("RColorBrewer"))
+  ipak_bioc(c("stringi"))
 } else {
   # OLD versions of R
   source("http://bioconductor.org/biocLite.R")
@@ -38,10 +42,13 @@ if( (version$major == 3 && version$minor >=5) || version$major > 3) {
   ipak(c("gridExtra"))
   ipak(c("gtools"))
   ipak(c("RColorBrewer"))
+  ipak(c("stringi"))
 }
 
 # works on old and new
 if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools", lib=instLib)
 library(devtools)
 options(download.file.method = "auto")
+install.packages(ascatPackage)
+install.packages(battenbergPackage)
 install_github("Irrationone/copynumber", ref="87d2663fe6b11c03cf6006b4ee9ed70450eacb5a")

@@ -49,6 +49,7 @@ RUN bash build/opt-build.sh $OPT
 COPY . .
 RUN bash build/opt-build-local.sh $OPT
 
+
 FROM ubuntu:20.04
 
 LABEL maintainer="cgphelp@sanger.ac.uk" \
@@ -62,7 +63,7 @@ ENV DEBIAN_FRONTEND "noninteractive"
 RUN apt-get install -yq --no-install-recommends \
 apt-transport-https \
 locales \
-curl \
+libcurl3-gnutls \
 ca-certificates \
 libperlio-gzip-perl \
 bzip2 \
