@@ -56,7 +56,7 @@ const my $RUN_FUNC => q{ -e '%s %s'};
 const my $SOURCE => q{source("%s"); };
 const my $LIBRARY => q{library(Battenberg);};
 const my $RUN_BAF_LOG => q{ getBAFsAndLogRs(tumourAlleleCountsFile.prefix="%s", normalAlleleCountsFile.prefix="%s", figuresFile.prefix="%s", BAFnormalFile="%s", BAFmutantFile="%s", logRnormalFile="%s", logRmutantFile="%s", combinedAlleleCountsFile="%s", %s, g1000file.prefix="%s", minCounts=%s, samplename="%s", seed=%s) };
-const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s", %s) };
+const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s",replic_timing_file_prefix=NULL, %s) };
 const my $IMPUTE_FROM_AF => q{ generate.impute.input.wgs(chrom="%s", tumour.allele.counts.file="%s", normal.allele.counts.file="%s", output.file="%s", imputeinfofile="%s", is.male="%s", problemLociFile="%s", useLociFile=%s, heterozygousFilter=%s) };
 const my $RUN_IMPUTE => q{ run.impute(inputfile="%s", outputfile.prefix="%s", is.male="%s", imputeinfofile="%s", impute.exe="%s", region.size=%s, chrom="%s", seed=%s)};
 const my $COMBINE_IMPUTE => q{ combine.impute.output(inputfile.prefix="%s", outputfile="%s", is.male="%s", imputeinfofile="%s", region.size=%s, chrom="%s" ) };
