@@ -60,6 +60,6 @@ fi
 # Rlibs
 if [ ! -e $SETUP_DIR/Rlib.success ]; then
   cd $INIT_DIR/Rsupport
-  ./setupR.sh $OPT
+  ./setupR.sh $INST_PATH
   touch $SETUP_DIR/Rlib.success
 fi
