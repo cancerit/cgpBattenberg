@@ -1,5 +1,10 @@
 # Changes
 
+## 3.6.0
+ * Added option the reference download script to use a pre-downloaded archive
+ * Updated Dockerfile base image
+ * Removed redundant logic from setup script
+
 ## 3.5.3
 
 * Fix parsing of subclones file when generating final outputs

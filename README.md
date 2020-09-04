@@ -13,12 +13,14 @@ copy number in matched NGS data.
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-* [Battenberg R code](#battenberg-r-code)
-  * [Scientific notation in R](#scientific-notation-in-r)
-* [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
-* [Installation](#installation)
-  * [Prerequisites](#prerequisites)
-* [Program Run Instructions](#program-run-instructions)
+- [Battenberg R code](#battenberg-r-code)
+  - [Scientific notation in R](#scientific-notation-in-r)
+- [Docker, Singularity and Dockstore](#docker-singularity-and-dockstore)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+- [Program Run Instructions](#program-run-instructions)
+- [LICENCE](#licence)
+
 
 <!-- /TOC -->
 
@@ -53,8 +55,8 @@ The battenberg R files are installed automatically from the Battenberg GitHub re
 Please install the following first:
 
 1. [PCAP-core v2.1.3+][pcap-core-rel]
-1. [alleleCount v3.3.1+][allele-count-rel]
-1. [cgpVcf v2.0.1+][cgpvcf-rel]
+2. [alleleCount v3.3.1+][allele-count-rel]
+3. [cgpVcf v2.0.1+][cgpvcf-rel]
 
 Then execute:
 
@@ -84,7 +86,7 @@ Some required data files are not included in the distribution but a script is in
   * Included: ``files/probloci.txt.gz``
 
 Additionally, the wgs_gc_correction_1000g files need to be downloaded. These can be obtained from the Battenberg R code site [here][bb-ref].
-  * The chr X wgs_gc_correction_1000g will require renaming. `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz` 
+  * The chr X wgs_gc_correction_1000g will require renaming. `mv 1000_genomes_GC_corr_chr_23.txt.gz 1000_genomes_GC_corr_chr_X.txt.gz`
 
 ## Program Run Instructions
 
