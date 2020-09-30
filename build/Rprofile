@@ -1,1 +1,2 @@
 options(scipen = 999)
+options(error = traceback)
