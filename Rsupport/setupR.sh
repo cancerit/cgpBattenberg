@@ -41,7 +41,7 @@ INST_PATH=$1
 BUILD_R=$2
 
 VERSION_ASCAT='2.5.1' # no 'v', not a project archive an artifact
-VERSION_BB='v2.3.1' # with 'v', this is a project archive
+VERSION_BB='v3.0.0' # with 'v', this is a project archive
 
 CPU=`grep -c ^processor /proc/cpuinfo`
 if [ $? -eq 0 ]; then

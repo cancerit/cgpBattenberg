@@ -12,19 +12,19 @@ RUN apt-get -yq update
 
 ENV DEBIAN_FRONTEND "noninteractive" 
 RUN apt-get install -yq --no-install-recommends locales
-RUN apt-get install -yq --no-install-recommends locales g++
-RUN apt-get install -yq --no-install-recommends locales make
-RUN apt-get install -yq --no-install-recommends locales gcc
-RUN apt-get install -yq --no-install-recommends locales pkg-config
-RUN apt-get install -yq --no-install-recommends locales python
-RUN apt-get install -yq --no-install-recommends locales zlib1g-dev
-RUN apt-get install -yq --no-install-recommends locales r-base
-RUN apt-get install -yq --no-install-recommends locales libbz2-dev
-RUN apt-get install -yq --no-install-recommends locales liblzma-dev
-RUN apt-get install -yq --no-install-recommends locales libcurl4-openssl-dev
-RUN apt-get install -yq --no-install-recommends locales libssl-dev
-RUN apt-get install -yq --no-install-recommends locales libxml2-dev
-RUN apt-get install -yq --no-install-recommends locales libssh2-1-dev
+RUN apt-get install -yq --no-install-recommends g++
+RUN apt-get install -yq --no-install-recommends make
+RUN apt-get install -yq --no-install-recommends gcc
+RUN apt-get install -yq --no-install-recommends pkg-config
+RUN apt-get install -yq --no-install-recommends python
+RUN apt-get install -yq --no-install-recommends zlib1g-dev
+RUN apt-get install -yq --no-install-recommends r-base
+RUN apt-get install -yq --no-install-recommends libbz2-dev
+RUN apt-get install -yq --no-install-recommends liblzma-dev
+RUN apt-get install -yq --no-install-recommends libcurl4-openssl-dev
+RUN apt-get install -yq --no-install-recommends libssl-dev
+RUN apt-get install -yq --no-install-recommends libxml2-dev
+RUN apt-get install -yq --no-install-recommends libssh2-1-dev
 
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8

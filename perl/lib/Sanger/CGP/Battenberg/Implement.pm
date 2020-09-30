@@ -56,7 +56,7 @@ const my $RUN_FUNC => q{ -e '%s %s'};
 const my $SOURCE => q{source("%s"); };
 const my $LIBRARY => q{library(Battenberg);};
 const my $RUN_BAF_LOG => q{ getBAFsAndLogRs(tumourAlleleCountsFile.prefix="%s", normalAlleleCountsFile.prefix="%s", figuresFile.prefix="%s", BAFnormalFile="%s", BAFmutantFile="%s", logRnormalFile="%s", logRmutantFile="%s", combinedAlleleCountsFile="%s", %s, g1000file.prefix="%s", minCounts=%s, samplename="%s", seed=%s) };
-const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s", %s) };
+const my $GC_CORRECT => q{ gc.correct.wgs(Tumour_LogR_file="%s", outfile="%s", correlations_outfile="%s", gc_content_file_prefix="%s",replic_timing_file_prefix=NULL, %s) };
 const my $IMPUTE_FROM_AF => q{ generate.impute.input.wgs(chrom="%s", tumour.allele.counts.file="%s", normal.allele.counts.file="%s", output.file="%s", imputeinfofile="%s", is.male="%s", problemLociFile="%s", useLociFile=%s, heterozygousFilter=%s) };
 const my $RUN_IMPUTE => q{ run.impute(inputfile="%s", outputfile.prefix="%s", is.male="%s", imputeinfofile="%s", impute.exe="%s", region.size=%s, chrom="%s", seed=%s)};
 const my $COMBINE_IMPUTE => q{ combine.impute.output(inputfile.prefix="%s", outputfile="%s", is.male="%s", imputeinfofile="%s", region.size=%s, chrom="%s" ) };
@@ -65,7 +65,7 @@ const my $PLOT_HAPLOTYPE_BAFS => q{ plot.haplotype.data(haplotyped.baf.file="%s"
 const my $COMBINE_BAFS => q{ combine.baf.files(inputfile.prefix="%s_chr", inputfile.postfix="_heterozygousMutBAFs_haplotyped.txt", outputfile="%s", %s) };
 const my $SEGMENT_PHASED => q{ segment.baf.phased(samplename="%s", inputfile="%s", outputfile="%s", gamma=%s, phasegamma=%s, kmin=%s, phasekmin=%s, calc_seg_baf_option=%s ) };
 const my $FIT_COPY_NUMBER => q{ fit.copy.number(samplename="%s", outputfile.prefix="%s_", inputfile.baf.segmented="%s", inputfile.baf="%s", inputfile.logr="%s", dist_choice=%s, ascat_dist_choice=%s, min.ploidy=%s, max.ploidy=%s, min.rho=%s, max.rho=%s, min.goodness=%s, uninformative_BAF_threshold=%s, gamma_param=%s %s) };
-const my $CALL_SUBCLONES => q{ callSubclones(sample.name="%s", baf.segmented.file="%s", logr.file="%s", rho.psi.file="%s", output.file="%s", output.figures.prefix="%s", output.gw.figures.prefix="%s", masking_output_file="%s", sv_breakpoints_file="%s", %s, gamma=%s, segmentation.gamma=%s, siglevel=%s, maxdist=%s, noperms=%s, seed=%s, calc_seg_baf_option=%s) };
+const my $CALL_SUBCLONES => q{ callSubclones(sample.name="%s", baf.segmented.file="%s", logr.file="%s", rho.psi.file="%s", output.file="%s", output.figures.prefix="%s", output.gw.figures.prefix="%s", masking_output_file="%s", %s, gamma=%s, segmentation.gamma=%s, siglevel=%s, maxdist=%s, noperms=%s, seed=%s, calc_seg_baf_option=%s) };
 const my $GET_CHROM_NAMES => q{ get.chrom.names("%s", "%s")};
 const my $ALLELE_COUNT_OUTPUT => q{%s_alleleFrequencies_chr%s.txt};
 const my $ALLELE_COUNT_PREFIX => q{%s_alleleFrequencies_chr};
@@ -960,7 +960,6 @@ sub battenberg_callsubclones{
   my $output_figures_prefix = sprintf $SUBCLONE_PREFIX, $tumour_name;
   my $output_gw_figures_prefix = sprintf $PROFILE_PNG, $tumour_name;
   my $masking_output_file = sprintf $SEG_MASKING_TXT, $tumour_name;
-  my $sv_breakpoints_file="NA";
   my $chrom_names = _get_chroms_as_string($impute_info, $options->{'is_male'});
   my $segmentation_gamma="NA";
   my $siglevel = $SIGLEVEL;
@@ -985,7 +984,6 @@ sub battenberg_callsubclones{
     $output_figures_prefix,
     $output_gw_figures_prefix,
     $masking_output_file,
-    $sv_breakpoints_file,
     "chr_names=as.vector(c($chrom_names))",
     $options->{'plat_gamma'},
     $segmentation_gamma,
