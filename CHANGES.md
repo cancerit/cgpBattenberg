@@ -1,5 +1,8 @@
 # Changes
 
+## 3.7.0
+ * Updated R Battenberg code to v2.2.9
+
 ## 3.6.0
  * Added option the reference download script to use a pre-downloaded archive
  * Updated Dockerfile base image
