@@ -85,7 +85,7 @@ if [ "x$BUILD_R" != "x" ]; then
 fi
 
 curl -sSL https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz > ascat_R.tar.gz
-curl -ssL https://github.com/cancerit/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
+curl -sSL https://github.com/cancerit/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
 
 Rscript $INIT_DIR/libInstall.R $R_LIBS_USER ascat_R.tar.gz BB_R.tar.gz 2>&1 | grep '^\*'
 
