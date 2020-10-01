@@ -2,6 +2,8 @@
 
 ## 3.7.0
  * Updated R Battenberg code to v2.2.9
+ * Update to allelecounter v4.2.0
+ * Updated Dockerfile base image 5.4.0
 
 ## 3.6.0
  * Added option the reference download script to use a pre-downloaded archive
