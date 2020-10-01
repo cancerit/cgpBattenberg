@@ -21,7 +21,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ########## LICENCE ##########
 
-export VER_ALLELECOUNT="4.1.0"
+export VER_ALLELECOUNT="4.2.0"
 export VER_CGPVCF="v2.2.1"
 export VER_IMPUTE2="v2.3.0"
 export VER_VCFTOOLS="0.1.16"
