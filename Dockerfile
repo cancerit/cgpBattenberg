@@ -57,8 +57,17 @@ LABEL maintainer="cgphelp@sanger.ac.uk" \
       version="3.6.0" \
       description="cgpCaVEManWrapper docker"
 
-RUN apt-get -yq update
+ENV OPT /opt/wtsi-cgp
+ENV PATH $OPT/bin:$OPT/biobambam2/bin:$PATH
+ENV PERL5LIB $OPT/lib/perl5
+ENV LD_LIBRARY_PATH $OPT/lib
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV R_LIBS $OPT/R-lib
+ENV R_LIBS_USER $R_LIBS
+ENV R_PROFILE_USER $OPT/config/Rprofile
 
+RUN apt-get -yq update
 ENV DEBIAN_FRONTEND "noninteractive" 
 RUN apt-get install -yq --no-install-recommends \
 apt-transport-https \
@@ -73,6 +82,7 @@ zlib1g \
 liblzma5 \
 libncurses5 \
 p11-kit \
+libxml2 \
 r-base \
 unattended-upgrades && \
 unattended-upgrade -d -v && \
@@ -81,16 +91,6 @@ apt-get autoremove -yq
 
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
-
-ENV OPT /opt/wtsi-cgp
-ENV PATH $OPT/bin:$OPT/biobambam2/bin:$PATH
-ENV PERL5LIB $OPT/lib/perl5
-ENV LD_LIBRARY_PATH $OPT/lib
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV R_LIBS $OPT/R-lib
-ENV R_LIBS_USER $R_LIBS
-ENV R_PROFILE_USER $OPT/config/Rprofile
 
 RUN mkdir -p $OPT
 COPY --from=builder $OPT $OPT

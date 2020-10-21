@@ -41,7 +41,7 @@ INST_PATH=$1
 BUILD_R=$2
 
 VERSION_ASCAT='2.5.1' # no 'v', not a project archive an artifact
-VERSION_BB='v3.0.0' # with 'v', this is a project archive
+VERSION_BB='v2.2.10' # with 'v', this is a project archive
 
 CPU=`grep -c ^processor /proc/cpuinfo`
 if [ $? -eq 0 ]; then
@@ -85,7 +85,7 @@ if [ "x$BUILD_R" != "x" ]; then
 fi
 
 curl -sSL https://github.com/Crick-CancerGenomics/ascat/releases/download/v${VERSION_ASCAT}/ASCAT_${VERSION_ASCAT}.tar.gz > ascat_R.tar.gz
-curl -sSL https://github.com/cancerit/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
+curl -sSL https://github.com/Wedge-lab/battenberg/archive/$VERSION_BB.tar.gz > BB_R.tar.gz
 
 Rscript $INIT_DIR/libInstall.R $R_LIBS_USER ascat_R.tar.gz BB_R.tar.gz 2>&1 | grep '^\*'
 
