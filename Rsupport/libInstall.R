@@ -33,6 +33,7 @@ if( (version$major == 3 && version$minor >=5) || version$major > 3) {
   ipak_bioc(c("gtools"))
   ipak_bioc(c("RColorBrewer"))
   ipak_bioc(c("stringi"))
+  ipak_bioc(c("VariantAnnotation"))
 } else {
   # OLD versions of R
   source("http://bioconductor.org/biocLite.R")
@@ -43,6 +44,7 @@ if( (version$major == 3 && version$minor >=5) || version$major > 3) {
   ipak(c("gtools"))
   ipak(c("RColorBrewer"))
   ipak(c("stringi"))
+  ipak(c("VariantAnnotation"))
 }
 
 # works on old and new
